@@ -1,0 +1,143 @@
+{
+    "$defs": {
+        "Event": {
+            "properties": {
+                "type": {
+                    "$ref": "#/$defs/EventTypeEnum"
+                },
+                "date": {
+                    "format": "date-time",
+                    "title": "Date",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "date"
+            ],
+            "title": "Event",
+            "type": "object"
+        },
+        "EventTypeEnum": {
+            "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20
+            ],
+            "title": "EventTypeEnum",
+            "type": "integer"
+        },
+        "NegativeEvent": {
+            "properties": {
+                "type": {
+                    "$ref": "#/$defs/EventTypeEnum"
+                },
+                "date": {
+                    "format": "date-time",
+                    "title": "Date",
+                    "type": "string"
+                },
+                "has_apologised": {
+                    "title": "Has Apologised",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "date",
+                "has_apologised"
+            ],
+            "title": "NegativeEvent",
+            "type": "object"
+        },
+        "OccupationEnum": {
+            "enum": [
+                "Teacher",
+                "Engineer",
+                "Artist",
+                "Doctor",
+                "Lawyer",
+                "Child",
+                "Programmer"
+            ],
+            "title": "OccupationEnum",
+            "type": "string"
+        },
+        "Person": {
+            "properties": {
+                "id": {
+                    "title": "Id",
+                    "type": "integer"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "age": {
+                    "title": "Age",
+                    "type": "integer"
+                },
+                "location": {
+                    "title": "Location",
+                    "type": "string"
+                },
+                "occupation": {
+                    "$ref": "#/$defs/OccupationEnum"
+                },
+                "favourite_katas": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Favourite Katas",
+                    "type": "array"
+                },
+                "events": {
+                    "items": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/$defs/Event"
+                            },
+                            {
+                                "$ref": "#/$defs/NegativeEvent"
+                            }
+                        ]
+                    },
+                    "title": "Events",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "id",
+                "name",
+                "age",
+                "location",
+                "occupation",
+                "events"
+            ],
+            "title": "Person",
+            "type": "object"
+        }
+    },
+    "items": {
+        "$ref": "#/$defs/Person"
+    },
+    "type": "array"
+}

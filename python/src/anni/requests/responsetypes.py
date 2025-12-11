@@ -5,17 +5,12 @@ from anni.types.datatypes import NaughtyOrNiceClassificationEnum, Person
 class CheckElfLogicRequestPerson(Person):
     pass
 
-class CheckElfLogicResponse(BaseModel):
-    id: int
-    name: str
-    status: NaughtyOrNiceClassificationEnum
-
 class ScoreElfLogicRequestPerson(BaseModel):
     id: int
-    name: str
-    status: NaughtyOrNiceClassificationEnum
+    naughtyOrNice: NaughtyOrNiceClassificationEnum = NaughtyOrNiceClassificationEnum.NONE
+
+class ScoreElfLogicRequest(BaseModel):
+    naughtyNiceCandidateRequests: list[ScoreElfLogicRequestPerson]
 
 class ScoreElfLogicResponse(BaseModel):
-    teamName: str
-    correct: int
-    incorrect: int 
+    score: int

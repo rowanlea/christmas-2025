@@ -63,8 +63,9 @@ class Person(BaseModel):
     events: List[Event | NegativeEvent]
 
 class NaughtyOrNiceClassificationEnum(str, Enum):
-    NAUGHTY = "Naughty"
-    NICE = "Nice"
+    NONE = "NONE"
+    NAUGHTY = "NAUGHTY"
+    NICE = "NICE"
 
 class ScoredPerson(Person):
-    naughty_or_nice: NaughtyOrNiceClassificationEnum
+    naughty_or_nice: NaughtyOrNiceClassificationEnum = NaughtyOrNiceClassificationEnum.NONE

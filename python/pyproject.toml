@@ -12,6 +12,7 @@ dependencies = [
 ]
 
 [tool.anni-settings]
-team_name = "" # put your team name here
-base_url = "http://localhost:8000"
-team_secret = "" # Can be anything, just needs to be unique to your team to prevent other people using your team name. Will be generated on first run if not set.
+team_name = "rowantest" # put your team name here
+base_url = "https://lscc.lifeatcodurance.com/"
+team_secret = "rowantest-secret-$1874"
+

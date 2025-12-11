@@ -1,8 +1,11 @@
 import argparse
 import os
+import sys
+# Ensure `src` is on the module search path when running this file directly
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 from typing import List
 from pydantic import TypeAdapter
-from anni.types.datatypes import Person
+from anni.types.datatypes import OccupationEnum, Person
 from anni.analyser import AutomatedNaughtyOrNiceAnalyser
 from testharness.testharness import TestHarness
 
@@ -19,8 +22,15 @@ def main():
 
     if args.test:
         harness = TestHarness()
-        people: List[Person] = []  # Populate with test Person data or load fixture
-        result = harness.check_elf_logic(people)
+        person = Person(
+            id=789433,
+            name="poo",
+            age=21,
+            location="lahndon",
+            occupation=OccupationEnum.PROGRAMMER,
+            events=[],
+        )
+        result = harness.check_elf_logic(person)
         print("Test Harness Result:", result)
     elif args.score:
         analyser = AutomatedNaughtyOrNiceAnalyser()

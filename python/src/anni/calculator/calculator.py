@@ -17,5 +17,5 @@ class AutomatedNaughtyOrNiceCalculator:
     def _decide(self, events: List[Event]) -> NaughtyOrNiceClassificationEnum:
         # Very naive example: any events -> NICE else NAUGHTY (adjust later)
         if events:
-            return NaughtyOrNiceClassificationEnum.NICE
-        return NaughtyOrNiceClassificationEnum.NAUGHTY
+            return NaughtyOrNiceClassificationEnum.NONE
+        return NaughtyOrNiceClassificationEnum.NONE
