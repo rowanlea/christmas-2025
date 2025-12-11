@@ -1,0 +1,17 @@
+[project]
+name = "christmas-kata"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "faker>=37.11.0",
+    "pydantic>=2.12.3",
+    "pydantic-settings>=2.11.0",
+    "requests>=2.32.5",
+]
+
+[tool.anni-settings]
+team_name = "" # put your team name here
+base_url = "http://localhost:8000"
+team_secret = "" # Can be anything, just needs to be unique to your team to prevent other people using your team name. Will be generated on first run if not set.
