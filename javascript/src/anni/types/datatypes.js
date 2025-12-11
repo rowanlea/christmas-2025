@@ -55,7 +55,7 @@ export const NaughtyOrNiceClassificationEnum = {
 // Zod Schemas for validation
 export const EventSchema = z.object({
   type: z.number().int().min(1).max(20),
-  date: z.string().datetime()
+  date: z.string()
 });
 
 export const NegativeEventSchema = EventSchema.extend({
