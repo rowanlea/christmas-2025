@@ -9,7 +9,7 @@ public class Emulator {
         for (String raw : script.split("\n")) {
             String line = raw.trim();
             if (line.isEmpty() || line.startsWith("#")) continue;
-            n = Integer.parseInt(line.split("\s+")[1]);
+            n = Integer.parseInt(line.split("\\s+")[1]);
             break;
         }
 

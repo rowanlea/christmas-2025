@@ -5,7 +5,7 @@ foreach (var raw in script.Split('\n'))
 {
     var line = raw.Trim();
     if (line.Length == 0 || line.StartsWith('#')) continue;
-    n = int.Parse(line.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1]);
+    n = int.Parse(line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)[1]);
     break;
 }
 
