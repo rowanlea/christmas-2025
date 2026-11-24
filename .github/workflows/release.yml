@@ -33,6 +33,11 @@ jobs:
             (cd "$stage" && zip -qr "$GITHUB_WORKSPACE/dist/hth-$os-$arch.zip" .)
           done
           ls -l dist
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*.zip
+      - name: Publish release with gh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag
+          gh release upload "$TAG" dist/*.zip --clobber
