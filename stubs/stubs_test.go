@@ -33,7 +33,7 @@ func TestStubs(t *testing.T) {
 		{"javascript", "node", []string{"stubs/javascript/emulator.js"}, 30 * time.Second},
 		{"java", "java", []string{"stubs/java/Emulator.java"}, 60 * time.Second},
 		{"csharp", "dotnet", []string{"run", "--project", "stubs/csharp"}, 300 * time.Second},
-		{"go", "go", []string{"run", "./stubs/go"}, 120 * time.Second},
+		{"go", "go", []string{"run", "stubs/go/main.go"}, 120 * time.Second},
 	}
 
 	want := strings.Repeat("K", 136) + "\n"
