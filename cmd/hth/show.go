@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	showSize     = 16
+	showSize     = 48
 	maxShowSteps = 500
 	showFPS      = 10
 )

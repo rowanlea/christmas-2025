@@ -58,7 +58,7 @@ A local viewer page also opens in your browser while the animation plays. If the
 
 ## Light shows
 
-A perfect score on Secret Santa (7.1) unlocks light shows. A show is a script of up to 500 steps, run with `SIZE 16`. Every step becomes one frame, and shows over 500 steps are refused. The latest show per team is kept and shown on the scoreboard. Shows are not scored.
+A perfect score on Secret Santa (7.1) unlocks light shows. A show is a script of up to 500 steps, run with `SIZE 48`, the same grid as Secret Santa. Every step becomes one frame, and shows over 500 steps are refused. The latest show per team is kept and shown on the scoreboard. Shows are not scored.
 
 ## Troubleshooting
 

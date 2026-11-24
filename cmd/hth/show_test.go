@@ -66,7 +66,7 @@ func writeShow(t *testing.T, name, header string, steps int) string {
 func TestShowRefusedBeforeSanta(t *testing.T) {
 	api := &showAPI{permCode: 403}
 	api.start(t)
-	file := writeShow(t, "s.txt", "SIZE 16", 3)
+	file := writeShow(t, "s.txt", "SIZE 48", 3)
 	logPath := filepath.Join(t.TempDir(), "runs.log")
 	code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "log", logPath)
 	if code != 1 || !strings.Contains(errs, "Santa comes first") {
@@ -83,7 +83,7 @@ func TestShowRefusedBeforeSanta(t *testing.T) {
 func TestShowTooLong(t *testing.T) {
 	api := &showAPI{}
 	api.start(t)
-	file := writeShow(t, "s.txt", "SIZE 16", 501)
+	file := writeShow(t, "s.txt", "SIZE 48", 501)
 	code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "count")
 	if code != 1 || !strings.Contains(errs, "show runs 501 steps; the limit is 500") {
 		t.Fatalf("code = %d, stderr %q", code, errs)
@@ -94,22 +94,26 @@ func TestShowTooLong(t *testing.T) {
 }
 
 func TestShowWrongSize(t *testing.T) {
-	api := &showAPI{}
-	api.start(t)
-	file := writeShow(t, "s.txt", "SIZE 4", 3)
-	code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "count")
-	if code != 1 || !strings.Contains(errs, "light shows use SIZE 16") {
-		t.Fatalf("code = %d, stderr %q", code, errs)
-	}
-	if api.permCalls != 0 {
-		t.Errorf("permission check made %d calls, want none", api.permCalls)
+	for _, size := range []string{"SIZE 4", "SIZE 16", "SIZE 47"} {
+		t.Run(size, func(t *testing.T) {
+			api := &showAPI{}
+			api.start(t)
+			file := writeShow(t, "s.txt", size, 3)
+			code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "count")
+			if code != 1 || !strings.Contains(errs, "light shows use SIZE 48") {
+				t.Fatalf("code = %d, stderr %q", code, errs)
+			}
+			if api.permCalls != 0 {
+				t.Errorf("permission check made %d calls, want none", api.permCalls)
+			}
+		})
 	}
 }
 
 func TestShowUploadsEveryStep(t *testing.T) {
 	api := &showAPI{}
 	api.start(t)
-	file := writeShow(t, "my-show.txt", "SIZE 16", 12)
+	file := writeShow(t, "my-show.txt", "SIZE 48", 12)
 	code, out, errs := runCapture("show", file, "--", programtest.FakePath(t), "count")
 	if code != 0 {
 		t.Fatalf("code = %d, stderr %q", code, errs)
@@ -118,8 +122,8 @@ func TestShowUploadsEveryStep(t *testing.T) {
 		t.Fatalf("uploads = %d, frames %v", len(api.uploads), len(api.uploads))
 	}
 	for i, f := range api.uploads[0] {
-		if len(f) != 136 {
-			t.Errorf("frame %d has %d chars, want 136", i, len(f))
+		if len(f) != 1176 {
+			t.Errorf("frame %d has %d chars, want 1176", i, len(f))
 		}
 	}
 	if !strings.Contains(out, "Show uploaded: 12 frames (about 2 seconds on the big screen)") {
@@ -136,7 +140,7 @@ func TestShowUploadsEveryStep(t *testing.T) {
 func TestShowFullRunFailureUploadsNothing(t *testing.T) {
 	api := &showAPI{}
 	api.start(t)
-	file := writeShow(t, "s.txt", "SIZE 16", 3)
+	file := writeShow(t, "s.txt", "SIZE 48", 3)
 	code, out, errs := runCapture("show", file, "--", programtest.FakePath(t), "print", "KKK")
 	if code != 1 || !strings.HasPrefix(errs, "hth: ") {
 		t.Fatalf("code = %d, stderr %q", code, errs)
@@ -149,7 +153,7 @@ func TestShowFullRunFailureUploadsNothing(t *testing.T) {
 func TestShowReportsSkippedSteps(t *testing.T) {
 	api := &showAPI{}
 	api.start(t)
-	file := writeShow(t, "s.txt", "SIZE 16", 12)
+	file := writeShow(t, "s.txt", "SIZE 48", 12)
 	code, out, errs := runCapture("show", file, "--", programtest.FakePath(t), "fail-lines", "3")
 	if code != 0 {
 		t.Fatalf("code = %d, stderr %q", code, errs)
@@ -167,7 +171,7 @@ func TestShowReportsSkippedSteps(t *testing.T) {
 func TestShowFiveHundredStepsUploadsFiveHundredFrames(t *testing.T) {
 	api := &showAPI{}
 	api.start(t)
-	file := writeShow(t, "max.txt", "SIZE 16", 500)
+	file := writeShow(t, "max.txt", "SIZE 48", 500)
 	code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "count")
 	if code != 0 {
 		t.Fatalf("code = %d, stderr %q", code, errs)
@@ -184,7 +188,7 @@ func TestShowFiveHundredStepsUploadsFiveHundredFrames(t *testing.T) {
 func TestShowNeverUploadsMoreThanFiveHundredFrames(t *testing.T) {
 	api := &showAPI{}
 	api.start(t)
-	file := writeShow(t, "max.txt", "SIZE 16", 500)
+	file := writeShow(t, "max.txt", "SIZE 48", 500)
 	marker := filepath.Join(t.TempDir(), "called")
 	code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "first-call-k", marker)
 	if code != 0 {
@@ -193,7 +197,7 @@ func TestShowNeverUploadsMoreThanFiveHundredFrames(t *testing.T) {
 	if len(api.uploads) != 1 || len(api.uploads[0]) != 500 {
 		t.Fatalf("uploads = %d, frames %d, want 1 upload of 500", len(api.uploads), len(api.uploads[0]))
 	}
-	if want := strings.Repeat("K", 136); api.uploads[0][499] != want {
+	if want := strings.Repeat("K", 1176); api.uploads[0][499] != want {
 		t.Errorf("last frame = %q, want the answer %q", api.uploads[0][499], want)
 	}
 }

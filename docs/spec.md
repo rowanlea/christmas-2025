@@ -169,6 +169,8 @@ Some submissions get a banner across the feed:
 
 The page needs live updates, through server-sent events or polling every few seconds.
 
+The scoreboard also has a challenge ladder. It lists every level, with 1.1 at the bottom, 7.1 near the top and "Found Santa" above it. Each team's name appears once, beside the first level on which it has not yet reached 80 %, with a fill showing how far it has got there. The server works out the ladder, so the page only draws it, and the ladder stops moving at the freeze along with the leaderboard.
+
 Light shows get their own panel under the feed, playing each team's latest show in turn. A team's first show also gets a banner.
 
 At the 20:45 freeze, the feed keeps showing trees, but scores are hidden and the scoreboard stops moving. Final standings are revealed at prize-giving.
@@ -336,7 +338,7 @@ A perfect solve puts Santa on the big screen. A near miss puts up a recognisable
 
 Once a team has a Secret Santa submission with every bulb correct, the system unlocks light shows for that team. Until then, `hth show` is refused with a message saying Santa comes first.
 
-A light show is a script the team writes itself, using the same eleven instructions on a 16-row tree, and runs through its own emulator:
+A light show is a script the team writes itself, using the same eleven instructions on a 48-row tree (the same grid as Secret Santa), and runs through its own emulator:
 
 ```
 hth show my-show.txt -- python emulator.py
