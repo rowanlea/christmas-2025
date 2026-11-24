@@ -7,12 +7,17 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"hth/internal/api"
 	"hth/internal/program/programtest"
+	"hth/internal/viewer"
 )
 
 type fakeAPI struct {
@@ -21,6 +26,8 @@ type fakeAPI struct {
 	fetchStatus int
 	fetchMsg    string
 	submitCode  int
+	script      string
+	submittedAt time.Time
 }
 
 func (f *fakeAPI) handler() http.Handler {
@@ -34,13 +41,14 @@ func (f *fakeAPI) handler() http.Handler {
 		w.WriteHeader(201)
 		json.NewEncoder(w).Encode(map[string]any{
 			"challengeId": "c1", "puzzle": r.PathValue("puzzle"), "size": 16,
-			"script": "SIZE 16\n", "expiresAt": "2030-01-01T00:00:00Z",
+			"script": f.scriptText(), "expiresAt": "2030-01-01T00:00:00Z",
 		})
 	})
 	mux.HandleFunc("POST /challenges/{id}/submission", func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		f.mu.Lock()
 		f.submissions = append(f.submissions, body)
+		f.submittedAt = time.Now()
 		f.mu.Unlock()
 		if f.submitCode != 0 {
 			w.WriteHeader(f.submitCode)
@@ -64,6 +72,7 @@ func setup(t *testing.T, f *fakeAPI) {
 
 func loginTo(t *testing.T, url string) {
 	t.Helper()
+	t.Chdir(t.TempDir())
 	t.Setenv("HTH_CONFIG", t.TempDir()+"/config.json")
 	if err := api.SaveConfig(api.Config{Server: url, Team: "team-07", Secret: "s"}); err != nil {
 		t.Fatal(err)
@@ -176,5 +185,79 @@ func TestRunStreamsProgramStderr(t *testing.T) {
 	_, _, errs := runCapture("run", "1.1", "--", programtest.FakePath(t), "stderr")
 	if !strings.Contains(errs, "hello from stderr") {
 		t.Errorf("stderr = %q", errs)
+	}
+}
+
+func (f *fakeAPI) scriptText() string {
+	if f.script != "" {
+		return f.script
+	}
+	return "SIZE 16\n"
+}
+
+func TestMain(m *testing.M) {
+	openViewer = func(viewer.Publication) (*viewer.Session, error) { return nil, nil }
+	os.Exit(m.Run())
+}
+
+func TestRunSubmitsBeforeAnimating(t *testing.T) {
+	f := &fakeAPI{script: "SIZE 16\nA\nB\nC\n"}
+	setup(t, f)
+	logPath := filepath.Join(t.TempDir(), "runs.log")
+	code, out, errs := runCapture("run", "1.1", "--", programtest.FakePath(t), "log", logPath)
+	if code != 0 {
+		t.Fatalf("code = %d, stderr %q", code, errs)
+	}
+	for _, want := range []string{"Animating 3 frames…", "Saved hth-run-1.1.gif"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("stdout missing %q: %q", want, out)
+		}
+	}
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Fields(string(data))
+	if len(lines) != 4 {
+		t.Fatalf("got %d program runs, want 4", len(lines))
+	}
+	f.mu.Lock()
+	submitted := f.submittedAt
+	f.mu.Unlock()
+	before := 0
+	for _, l := range lines {
+		started, err := time.Parse(time.RFC3339Nano, l)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if started.Before(submitted) {
+			before++
+		}
+	}
+	if before != 1 {
+		t.Errorf("%d runs started before the submission, want 1", before)
+	}
+}
+
+func TestRunSucceedsWhenViewerFails(t *testing.T) {
+	openViewer = viewer.Open
+	t.Cleanup(func() { openViewer = func(viewer.Publication) (*viewer.Session, error) { return nil, nil } })
+	html := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		io.WriteString(w, "<html>not hth</html>")
+	}))
+	t.Cleanup(html.Close)
+	u, _ := url.Parse(html.URL)
+	t.Setenv("HTH_VIEWER_PORT", u.Port())
+	setup(t, &fakeAPI{})
+	code, _, errs := runCapture("run", "1.1", "--", programtest.FakePath(t), "echo-k")
+	if code != 0 {
+		t.Fatalf("code = %d, stderr %q", code, errs)
+	}
+	if !strings.Contains(errs, "hth: viewer:") {
+		t.Errorf("stderr = %q", errs)
+	}
+	if _, err := os.Stat("hth-run-1.1.gif"); err != nil {
+		t.Errorf("gif not written: %v", err)
 	}
 }

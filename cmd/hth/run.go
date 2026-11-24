@@ -4,11 +4,23 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"os/signal"
+	"strconv"
+	"time"
 
+	"hth/internal/animate"
 	"hth/internal/api"
 	"hth/internal/program"
+	"hth/internal/script"
 	"hth/internal/tree"
+	"hth/internal/viewer"
 )
+
+const maxFrames = 120
+
+// openViewer is a variable so tests do not start a daemon or a browser.
+var openViewer = viewer.Open
 
 // runCmd fetches a live challenge, runs the team's program on its script,
 // submits the rendered answer and prints the score.
@@ -62,5 +74,47 @@ func runPuzzle(puzzle string, argv []string, stdout, stderr io.Writer) error {
 	if score.Unlocked != nil {
 		fmt.Fprintf(stdout, "Unlocked %s\n", *score.Unlocked)
 	}
+	summary := fmt.Sprintf("%d/%d correct (%d%%)", score.Correct, score.BulbCount, pct)
+	animateRun(puzzle, ch.Size, answer, summary, ch.Script, argv, stdout, stderr)
 	return nil
+}
+
+// animateRun is best effort: the submission has already happened, so a viewer
+// or GIF problem is a warning and never changes the exit code.
+func animateRun(puzzle string, size int, answer, summary, scriptText string, argv []string, stdout, stderr io.Writer) {
+	s, err := script.Parse(scriptText)
+	if err != nil {
+		fmt.Fprintf(stderr, "hth: gif: %s\n", oneLine(err.Error()))
+		return
+	}
+	plan := script.Sample(s, maxFrames)
+	card := viewer.Card{
+		ID: puzzle, Title: "Puzzle " + puzzle, Size: size, Answer: answer,
+		Summary: summary, FrameCount: len(plan.Frames), IntervalMs: 100,
+	}
+	sess := openSession("run", []viewer.Card{card}, stderr)
+	if sess != nil {
+		defer sess.Close()
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	fmt.Fprintf(stdout, "Animating %d frames…\n", len(plan.Frames))
+	gifPath := "hth-run-" + puzzle + ".gif"
+	if _, err := animate.Animate(ctx, argv, plan, size, answer, puzzle, sess, gifPath); err != nil {
+		fmt.Fprintf(stderr, "hth: gif: %s\n", oneLine(err.Error()))
+		return
+	}
+	fmt.Fprintf(stdout, "Saved %s\n", gifPath)
+}
+
+// openSession opens a viewer publication. A failure prints a warning and
+// returns nil, which every caller treats as "no viewer".
+func openSession(kind string, cards []viewer.Card, stderr io.Writer) *viewer.Session {
+	pub := viewer.Publication{ID: strconv.FormatInt(time.Now().UnixNano(), 36), Kind: kind, Cards: cards}
+	sess, err := openViewer(pub)
+	if err != nil {
+		fmt.Fprintf(stderr, "hth: viewer: %s\n", oneLine(err.Error()))
+		return nil
+	}
+	return sess
 }

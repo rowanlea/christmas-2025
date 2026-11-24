@@ -33,7 +33,9 @@ func FakePath(t testing.TB) string {
 		path = filepath.Join(dir, name)
 		_, file, _, _ := runtime.Caller(0)
 		src := filepath.Join(filepath.Dir(file), "..", "testdata", "fake")
-		out, err := exec.Command("go", "build", "-o", path, src).CombinedOutput()
+		build := exec.Command("go", "build", "-o", path, ".")
+		build.Dir = src
+		out, err := build.CombinedOutput()
 		if err != nil {
 			buildErr = fmt.Errorf("%w\n%s", err, out)
 		}
