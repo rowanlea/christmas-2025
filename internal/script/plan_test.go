@@ -3,6 +3,7 @@ package script
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func mustParse(t *testing.T, text string) Script {
@@ -101,12 +102,74 @@ func TestSampleSpreadsEvenlyAndKeepsEnds(t *testing.T) {
 }
 
 func TestSampleCandidateCap(t *testing.T) {
-	// Two nested 1e9 loops: walking is capped at 100 x 100 passes, and the
-	// rest is counted arithmetically without hanging.
-	s := mustParse(t, "SIZE 3\nREPEAT 1000000000\nREPEAT 1000000000\nA\nEND\nEND\n")
+	s := mustParse(t, "SIZE 3\nREPEAT 1000000000\nREPEAT 1000000000\nREPEAT 1000000000\nA\nEND\nEND\nEND\n")
 	p := Sample(s, 120)
-	if len(p.Frames) > 120 || p.SkippedAtEnd <= 0 {
-		t.Fatalf("%d frames, skip %d", len(p.Frames), p.SkippedAtEnd)
+	if len(p.Frames) > 120 {
+		t.Fatalf("%d frames", len(p.Frames))
+	}
+	if p.SkippedAtEnd != 9_092_999_090_700 {
+		t.Fatalf("SkippedAtEnd %d", p.SkippedAtEnd)
+	}
+	total := p.SkippedAtEnd
+	for _, f := range p.Frames {
+		total += f.SkippedBefore
+	}
+	if total != 10_100_998_989_900 {
+		t.Fatalf("skips not conserved: %d", total)
+	}
+}
+
+func TestSampleManySkipsStaysWithinLimit(t *testing.T) {
+	text := "SIZE 3\n" + strings.Repeat("REPEAT 1000\nA\nEND\n", 300)
+	p := Sample(mustParse(t, text), 120)
+	if len(p.Frames) != 120 {
+		t.Fatalf("%d frames", len(p.Frames))
+	}
+	if !strings.HasPrefix(p.Frames[0].Script, "SIZE 3\nA\n") || p.Frames[0].SkippedBefore != 0 {
+		t.Fatalf("first frame %q", p.Frames[0].Script)
+	}
+	last := mustParse(t, p.Frames[119].Script)
+	if last.Steps().Int64() != 299*1000+100 {
+		t.Fatalf("last frame is step %d", last.Steps().Int64())
+	}
+	total := p.SkippedAtEnd
+	for _, f := range p.Frames {
+		total += f.SkippedBefore
+	}
+	if total != 300*900 {
+		t.Fatalf("skips not conserved: %d", total)
+	}
+}
+
+func TestEmptyLoopsDoNotHang(t *testing.T) {
+	for _, body := range []string{
+		"REPEAT 1000000000\nEND\n",
+		"REPEAT 1000000000\nREPEAT 0\nX\nEND\nEND\n",
+		"REPEAT 1000000000\nREPEAT 1000000000\nREPEAT 1000000000\nEND\nEND\nEND\n",
+	} {
+		s := mustParse(t, "SIZE 3\n"+body+"A\n")
+		done := make(chan [2]Plan, 1)
+		go func() { done <- [2]Plan{Every(s), Sample(s, 120)} }()
+		select {
+		case ps := <-done:
+			for _, p := range ps {
+				if len(p.Frames) != 1 || p.SkippedAtEnd != 0 || p.Frames[0].SkippedBefore != 0 {
+					t.Fatalf("%q: %+v", body, p)
+				}
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatalf("%q: planner hangs", body)
+		}
+	}
+}
+
+func TestEveryRefusesOver500Steps(t *testing.T) {
+	p := Every(mustParse(t, "SIZE 3\nREPEAT 501\nA\nEND\n"))
+	if len(p.Frames) != 0 {
+		t.Fatalf("%d frames", len(p.Frames))
+	}
+	if len(Every(mustParse(t, "SIZE 3\nREPEAT 500\nA\nEND\n")).Frames) != 500 {
+		t.Fatal("500 steps should be kept")
 	}
 }
 

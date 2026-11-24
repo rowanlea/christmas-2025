@@ -3,6 +3,7 @@ package script
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"sort"
 	"strings"
 )
@@ -34,24 +35,34 @@ type candidate struct {
 	skip int64
 }
 
-// Sample picks up to max frames for hth run and hth test.
-func Sample(s Script, max int) Plan {
+// Sample picks up to limit frames for hth run and hth test. It never returns
+// more than limit frames.
+func Sample(s Script, limit int) Plan {
 	w := &walker{passCap: passCap, candCap: candidateCap}
 	w.walk(s.Body, nil)
 	cands := w.cands
-	if max <= 0 || len(cands) == 0 {
+	if limit <= 0 || len(cands) == 0 {
 		return Plan{SkippedAtEnd: w.pending}
 	}
-	chosen := choose(cands, max)
 	plan := Plan{SkippedAtEnd: w.pending}
-	for _, i := range chosen {
-		plan.Frames = append(plan.Frames, Frame{Script: cutDown(s.Size, s.Body, cands[i].path), SkippedBefore: cands[i].skip})
+	prev := -1
+	for _, i := range choose(cands, limit) {
+		var skipped int64
+		for _, c := range cands[prev+1 : i+1] {
+			skipped = satAdd(skipped, c.skip)
+		}
+		prev = i
+		plan.Frames = append(plan.Frames, Frame{Script: cutDown(s.Size, s.Body, cands[i].path), SkippedBefore: skipped})
 	}
 	return plan
 }
 
-// Every keeps every step with no pass cap.
+// Every keeps every step with no pass cap. It returns an empty Plan when the
+// script has more than 500 steps.
 func Every(s Script) Plan {
+	if s.Steps().Cmp(big.NewInt(500)) > 0 {
+		return Plan{}
+	}
 	w := &walker{passCap: -1, candCap: -1}
 	w.walk(s.Body, nil)
 	plan := Plan{}
@@ -81,6 +92,9 @@ func (w *walker) walk(nodes []Node, path []pathEl) {
 			w.pending = 0
 			continue
 		}
+		if !hasSteps(n.Body) {
+			continue
+		}
 		passes := n.Count
 		if w.passCap >= 0 && passes > w.passCap {
 			passes = w.passCap
@@ -100,6 +114,9 @@ func (w *walker) walk(nodes []Node, path []pathEl) {
 func skips(nodes []Node, cap int64) int64 {
 	var total int64
 	for _, n := range nodes {
+		if !n.Loop || !hasSteps(n.Body) {
+			continue
+		}
 		p := n.Count
 		if cap >= 0 && p > cap {
 			p = cap
@@ -126,54 +143,87 @@ func satMul(a, b int64) int64 {
 	return a * b
 }
 
-// choose returns ascending candidate indices: evenly spread, always the first,
-// the last, and every candidate that follows a skip, trimmed to max where the
-// forced ones leave room.
-func choose(cands []candidate, max int) []int {
-	n := len(cands)
-	protected := map[int]bool{0: true, n - 1: true}
-	for i, c := range cands {
-		if c.skip > 0 {
-			protected[i] = true
+// hasSteps reports whether executing nodes runs at least one step.
+func hasSteps(nodes []Node) bool {
+	for _, n := range nodes {
+		if !n.Loop || (n.Count > 0 && hasSteps(n.Body)) {
+			return true
 		}
+	}
+	return false
+}
+
+// choose returns at most limit ascending candidate indices: evenly spread,
+// including the first, the last and, where room allows, every candidate that
+// follows a skip.
+func choose(cands []candidate, limit int) []int {
+	n := len(cands)
+	if limit < 2 {
+		return []int{0}
+	}
+	if limit >= n {
+		all := make([]int, n)
+		for i := range all {
+			all[i] = i
+		}
+		return all
+	}
+	var forced []int
+	for i, c := range cands {
+		if i == 0 || i == n-1 || c.skip > 0 {
+			forced = append(forced, i)
+		}
+	}
+	if len(forced) >= limit {
+		out := []int{forced[0]}
+		out = append(out, spread(forced[1:len(forced)-1], limit-2)...)
+		return append(out, forced[len(forced)-1])
 	}
 	set := map[int]bool{}
-	for i := range protected {
+	for _, i := range forced {
 		set[i] = true
 	}
-	if max >= n {
-		for i := 0; i < n; i++ {
-			set[i] = true
-		}
-	} else if max > 1 {
-		for j := 0; j < max; j++ {
-			set[int(math.Round(float64(j)*float64(n-1)/float64(max-1)))] = true
-		}
+	for j := 0; j < limit; j++ {
+		set[int(math.Round(float64(j)*float64(n-1)/float64(limit-1)))] = true
 	}
 	var out, loose []int
 	for i := range set {
 		out = append(out, i)
-		if !protected[i] {
+	}
+	sort.Ints(out)
+	isForced := map[int]bool{}
+	for _, i := range forced {
+		isForced[i] = true
+	}
+	for _, i := range out {
+		if !isForced[i] {
 			loose = append(loose, i)
 		}
 	}
-	sort.Ints(out)
-	sort.Ints(loose)
-	if excess := len(out) - max; excess > 0 && len(loose) > 0 {
-		if excess > len(loose) {
-			excess = len(loose)
-		}
-		drop := map[int]bool{}
-		for j := 0; j < excess; j++ {
-			drop[loose[int((float64(j)+0.5)*float64(len(loose))/float64(excess))]] = true
+	if excess := len(out) - limit; excess > 0 {
+		keep := map[int]bool{}
+		for _, i := range spread(loose, len(loose)-excess) {
+			keep[i] = true
 		}
 		kept := out[:0]
 		for _, i := range out {
-			if !drop[i] {
+			if isForced[i] || keep[i] {
 				kept = append(kept, i)
 			}
 		}
 		out = kept
+	}
+	return out
+}
+
+// spread picks k items of list evenly, keeping order.
+func spread(list []int, k int) []int {
+	if k >= len(list) {
+		return list
+	}
+	var out []int
+	for j := 0; j < k; j++ {
+		out = append(out, list[int((float64(j)+0.5)*float64(len(list))/float64(k))])
 	}
 	return out
 }
