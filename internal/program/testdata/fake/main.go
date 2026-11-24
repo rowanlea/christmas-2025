@@ -24,6 +24,8 @@ func main() {
 		echoK(readScript())
 	case "count":
 		count(readScript())
+	case "print":
+		fmt.Println(arg)
 	case "crlf":
 		fmt.Print("KKK \r\n")
 	case "debug-stdout":

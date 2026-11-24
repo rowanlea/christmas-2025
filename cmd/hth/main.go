@@ -41,6 +41,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "hth %s: separate the program command with --\n%s", args[0], usage)
 			return 2
 		}
+		if args[0] == "run" {
+			return runCmd(args[1:], stdout, stderr)
+		}
 		return notImplemented(stderr, args[0])
 	case "viewer":
 		return notImplemented(stderr, "viewer")
