@@ -9,7 +9,9 @@ This is the JavaScript implementation of the Automated Naughty or Nice Analyzer.
    npm install
    ```
 
-2. Configure your team settings in `config.json`:
+2. Register your team at <https://lscc.lifeatcodurance.com/your-team-name/>
+
+3. Configure your team settings in `config.json`:
    ```json
    {
      "team_name": "your-team-name",

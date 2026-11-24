@@ -107,8 +107,10 @@ export class RequestHandler {
     // Validate request data
     ScoreElfLogicRequestSchema.parse(requestData);
     
-    const parsedResponse = await this._post(endpoint, requestData);
-    return ScoreElfLogicResponseSchema.parse(parsedResponse);
+    const response = await this._post(endpoint, requestData);
+    const parsedResponse = ScoreElfLogicResponseSchema.parse(response);
+    
+    return parsedResponse
   }
 }
 

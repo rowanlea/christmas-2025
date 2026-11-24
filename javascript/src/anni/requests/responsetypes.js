@@ -21,7 +21,8 @@ export const ScoreElfLogicRequestSchema = z.object({
 
 // ScoreElfLogicResponse
 export const ScoreElfLogicResponseSchema = z.object({
-  score: z.number().int()
+  score: z.number().int(),
+  idsThatAreCorrect: z.array(z.number().int())
 });
 
 

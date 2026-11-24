@@ -22,7 +22,9 @@ This is the Python implementation of the Automated Naughty or Nice Analyzer.
    - pydantic-settings >= 2.11.0
    - requests >= 2.32.5
 
-2. Configure your team settings in `pyproject.toml`:
+2. Register your team at <https://lscc.lifeatcodurance.com/your-team-name/>
+
+3. Configure your team settings in `pyproject.toml`:
    ```toml
    [tool.anni-settings]
    team_name = "your-team-name"
