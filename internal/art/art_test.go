@@ -192,23 +192,6 @@ func TestWriteGIF(t *testing.T) {
 			break
 		}
 	}
-	white := func(im *image.Paletted) int {
-		count := 0
-		for y := 560; y < 600; y++ {
-			for x := 0; x < 600; x++ {
-				if rgb(im.At(x, y)) == (color.RGBA{255, 255, 255, 255}) {
-					count++
-				}
-			}
-		}
-		return count
-	}
-	if white(g.Image[2]) == 0 {
-		t.Errorf("captioned frame has no white caption pixels")
-	}
-	if white(g.Image[1]) != 0 {
-		t.Errorf("uncaptioned frame has white pixels in the caption area")
-	}
 }
 
 func TestWriteGIFRejectsUnknownCaptionGlyph(t *testing.T) {
@@ -228,5 +211,61 @@ func TestFontHoldsOnlyTheCaptionAlphabet(t *testing.T) {
 	}
 	if len(glyphs) != len(want) {
 		t.Errorf("font has %d glyphs, want %d", len(glyphs), len(want))
+	}
+}
+
+func decodeGIF(t *testing.T, size int, frames []string, captions map[int]string, final string) *gif.GIF {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "x.gif")
+	if err := WriteGIF(path, size, frames, captions, final); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	g, err := gif.DecodeAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return g
+}
+
+func TestWriteGIFCaptionBar(t *testing.T) {
+	const n = 3
+	line := strings.Repeat("K", tree.BulbCount(n)) // no white bulbs: white pixels can only be caption ink
+	g := decodeGIF(t, n, []string{line, line}, map[int]string{1: "12, 3 passes later"}, line)
+	plain, captioned := g.Image[0], g.Image[1]
+
+	const barTop = 600 - (7*fontScale + 2*captionPad)
+	white := color.RGBA{255, 255, 255, 255}
+	minX, maxX, minY, maxY, ink := 600, -1, 600, -1, 0
+	differs := false
+	for y := 0; y < 600; y++ {
+		for x := 0; x < 600; x++ {
+			if rgb(plain.At(x, y)) == white {
+				t.Fatalf("uncaptioned frame has white pixel at (%d,%d)", x, y)
+			}
+			if rgb(captioned.At(x, y)) == white {
+				ink++
+				minX, maxX, minY, maxY = min(minX, x), max(maxX, x), min(minY, y), max(maxY, y)
+			}
+			if y >= barTop && rgb(captioned.At(x, y)) != rgb(plain.At(x, y)) {
+				differs = true
+			}
+			if y < barTop && rgb(captioned.At(x, y)) != rgb(plain.At(x, y)) {
+				t.Fatalf("caption changed pixel (%d,%d) above the bar", x, y)
+			}
+		}
+	}
+	if !differs || ink == 0 {
+		t.Fatalf("caption not drawn: bar differs=%v, ink pixels=%d", differs, ink)
+	}
+	if minY < barTop+captionPad || maxY >= barTop+captionPad+7*fontScale {
+		t.Errorf("ink rows %d..%d outside text rows of the bar", minY, maxY)
+	}
+	if centre := (minX + maxX) / 2; centre < 297 || centre > 303 {
+		t.Errorf("caption ink spans x %d..%d, centre %d, want about 300", minX, maxX, centre)
 	}
 }
