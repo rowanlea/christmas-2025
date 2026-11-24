@@ -34,7 +34,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "login":
 		return login(args[1:], stdout, stderr)
-	case "run", "test", "show":
+	case "test":
+		return testCmd(args[1:], stdout, stderr)
+	case "run", "show":
 		if _, _, ok := splitProgram(args[1:]); !ok {
 			fmt.Fprintf(stderr, "hth %s: separate the program command with --\n%s", args[0], usage)
 			return 2

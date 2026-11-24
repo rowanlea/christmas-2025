@@ -1,0 +1,10 @@
+# Silent Night — a repeat count too big to run one step at a time
+# expect: GGGRRRRRRR
+SIZE 4
+SET 2 1 R
+SET 3 0 G
+REPEAT 1000000000
+  CYCLE
+  GROW R
+  ROTATE
+END

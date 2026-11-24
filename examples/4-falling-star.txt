@@ -1,0 +1,7 @@
+# Light Show — a falling star
+# expect: KKKKRKKGBK
+SIZE 4
+SET 0 0 R
+SET 1 0 G
+SET 1 1 B
+FALL

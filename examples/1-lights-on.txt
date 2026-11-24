@@ -1,0 +1,7 @@
+# Lights On — fill, set, row and rotate
+# expect: RRGRGW
+SIZE 3
+FILL G
+SET 0 0 W
+ROW 2 R
+ROTATE

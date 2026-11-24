@@ -1,0 +1,22 @@
+# Long Haul — nested repeats, repeat 0, comments and blank lines
+# expect: KKGGGGWGKK
+SIZE 4
+# comments and blank lines are ignored, even inside blocks
+SET 0 0 R
+ROW 3 B
+
+REPEAT 0
+  FILL W
+END
+REPEAT 1
+  REPEAT 2
+    # nothing here
+  END
+  REPEAT 3
+    CYCLE
+    REPEAT 2
+      CHASE
+    END
+  END
+END
+SET 3 1 G
