@@ -169,11 +169,11 @@ Some submissions get a banner across the feed:
 
 The page needs live updates, through server-sent events or polling every few seconds.
 
-The scoreboard also has a challenge ladder. It lists every level, with 1.1 at the bottom, 7.1 near the top and "Found Santa" above it. Each team's name appears once, beside the first level on which it has not yet reached 80 %, with a fill showing how far it has got there. The server works out the ladder, so the page only draws it, and the ladder stops moving at the freeze along with the leaderboard.
+The scoreboard also has a challenge ladder. It lists every level, with 1.1 at the bottom, 7.1 near the top and "Found Santa" above it. Each team's name appears once, beside the first level on which it has not yet reached 80 %, with a fill showing how far it has got there. The server works out the ladder, so the page only draws it.
 
 Light shows get their own panel under the feed, playing each team's latest show in turn. A team's first show also gets a banner.
 
-At the 20:45 freeze, the feed keeps showing trees, but scores are hidden and the scoreboard stops moving. Final standings are revealed at prize-giving.
+The host hides the standings on the big screen near the end. The final standings are revealed at prize-giving.
 
 ## Instructions
 
@@ -359,7 +359,7 @@ The evening runs 18:30 to 21:30 at the Codurance office, with participants worki
 | 18:30 | Food and arrivals |
 | 18:50 | Ten-minute intro: the tree, the harness, and the worked example |
 | 19:00 | Pairs form, and puzzle 1.1 opens |
-| 20:45 | Scoreboard freezes. The feed keeps showing trees, without scores |
+| 20:45 | Host hides the standings on the big screen |
 | 20:50 | Reveal of the intended approach, then two or three pairs show their designs and a few light shows play |
 | 21:15 | Prizes |
 | 21:30 | Pub |

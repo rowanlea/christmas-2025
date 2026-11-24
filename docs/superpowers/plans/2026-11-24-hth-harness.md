@@ -66,10 +66,9 @@ Auth headers `X-Team-Name` and `X-Unique-Key` are required on every route except
 | `GET /shows/permission` | — | `204` | `403` `Santa comes first: get full marks on 7.1 to unlock light shows` |
 | `POST /shows` | body `{"frames":["<136 chars>",…]}`, ≤ 256 KiB | `201` `{"frames":412}` | `403` as above, `400` no frames, over 500 frames, or a frame not 136 `RGBWK` chars, `413` too large |
 | `GET /shows` *public* | — | `200` `[{"teamName","frames":[…],"submittedAt"}]`, the latest show per team, oldest submission first | — |
-| `GET /leaderboard` *public* | — | `200` `[{"teamName":"team-07","total":1234,"puzzles":{"1.1":100}}]` (points), total descending. After freeze, pre-freeze points | — |
-| `GET /leaderboard/final` | header `X-Admin-Key` (no team headers) | as above, live scores | `401` |
-| `GET /feed` *public* | — | `200` `{"frozen":false,"tiles":[Tile…]}`, newest first, max 8 | — |
-| `GET /feed/events` *public* | — | `text/event-stream`: event `tile` (data Tile), event `leaderboard` (data leaderboard; not sent after freeze), and event `show` (data `{"teamName","first":bool}`; the page then reloads `/shows`) | — |
+| `GET /leaderboard` *public* | — | `200` `[{"teamName":"team-07","total":1234,"puzzles":{"1.1":100}}]` (points), total descending. | — |
+| `GET /feed` *public* | — | `200` `{"tiles":[Tile…]}`, newest first, max 8 | — |
+| `GET /feed/events` *public* | — | `text/event-stream`: event `tile` (data Tile), event `leaderboard` (data leaderboard), and event `show` (data `{"teamName","first":bool}`; the page then reloads `/shows`) | — |
 
 `hth` uses only the first six routes. The leaderboard and feed routes serve the scoreboard.
 
