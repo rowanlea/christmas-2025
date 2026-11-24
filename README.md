@@ -25,7 +25,7 @@ hth --version
 ```
 
 - `hth login <team>` registers a new team and saves its secret. To join an existing team, pass `--secret`. The config is stored in your user config folder as `hth/config.json`.
-- `hth test examples -- <cmd>` runs your program on every example in `examples/` and reports which trees match.
+- `hth test examples -- <cmd>` runs your program on the worked example in `examples/` and reports whether the tree matches.
 - `hth run <puzzle> -- <cmd>` fetches a live challenge for a puzzle such as `3.2`, runs your program, and submits the answer.
 - `hth show <file> -- <cmd>` runs your program on a light show script and publishes the result (see Light shows).
 

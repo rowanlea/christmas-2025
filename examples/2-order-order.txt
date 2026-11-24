@@ -1,8 +1,0 @@
-# Order, Order — mirror and rotate change where bulbs sit
-# expect: KKKKGKRKKB
-SIZE 4
-SET 3 0 R
-SET 2 1 G
-SET 0 0 B
-MIRROR
-ROTATE

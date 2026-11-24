@@ -12,10 +12,10 @@ func TestLoadExamples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(exs) != 8 {
-		t.Fatalf("got %d examples, want 8", len(exs))
+	if len(exs) != 1 {
+		t.Fatalf("got %d examples, want 1", len(exs))
 	}
-	if exs[0].Name != "1-lights-on" || exs[0].Size != 3 || exs[0].Expected != "RRGRGW" {
+	if exs[0].Name != "worked-example" || exs[0].Size != 3 || exs[0].Expected != "RRGRGW" {
 		t.Errorf("first example = %+v", exs[0])
 	}
 }

@@ -47,7 +47,7 @@ The team's program reads a challenge script on stdin and prints one answer line 
 
 Script rules:
 
-- The first line is `SIZE n`, the number of rows. Rounds 1 to 6 use 16, and worked examples use 3 or 4.
+- The first line is `SIZE n`, the number of rows. Rounds 1 to 6 use 16, and the worked example uses 3.
 - Each line holds one instruction. Tokens are uppercase and separated by single spaces. Blank lines and lines starting with `#` are ignored.
 - `REPEAT` opens a block and `END` closes it. Blocks can nest.
 
@@ -99,7 +99,7 @@ A team's loop on each puzzle:
 1. Run the harness against the puzzle with the team's program.
 2. The harness fetches a freshly generated script, which must be submitted within five minutes.
 3. The team's program produces the answer line, and the harness renders and submits it.
-4. The system returns the score. The team debugs locally against the worked examples, then fetches again.
+4. The system returns the score. The team debugs locally against the worked example, then fetches again.
 
 Every fetch is a new script, so a resubmission tests the emulator rather than a remembered answer. Generated scripts run to thousands of lines, with nested and billion-pass loops. Nobody traces that by hand inside five minutes, so working code is the only way through.
 
@@ -116,7 +116,7 @@ hth test examples/ -- ./emulator
 
 `hth run` takes a puzzle number and the command that starts the team's program. It fetches a challenge and pipes the script in. It then checks the answer line's length against the size line and its characters, renders the PNG, submits it, and prints the score.
 
-`hth test` is the inner TDD loop. It runs the worked examples locally without submitting, compares each answer with the expected one, and shows the expected and actual trees side by side in the viewer, with the wrong bulbs ringed.
+`hth test` is the inner TDD loop. It runs the worked example locally without submitting, compares the answer with the expected one, and shows the expected and actual trees side by side in the viewer, with the wrong bulbs ringed.
 
 We also supply starter stubs in common languages. Each one reads stdin and prints 136 Ks, which is enough to prove the pipe works before anyone writes real logic.
 
@@ -138,7 +138,7 @@ A script with any other size falls back to a plain dark background with bulbs dr
 | Run | Animation | Also shown |
 | --- | --- | --- |
 | `hth run` | The tree evolving through the script, then the final tree twinkling | Puzzle number and score |
-| `hth test` | The same, for each worked example | Expected tree beside it, with wrong bulbs ringed |
+| `hth test` | The same, for the worked example | Expected tree beside it, with wrong bulbs ringed |
 | `hth show` | Every step of the show | Show length |
 
 Frames come from the team's own emulator, so a broken emulator animates its own mistakes. The harness walks through the script's execution and picks up to 120 points spread across it. For each point it writes a shortened script that stops there, cutting any loop it's inside down to the passes so far, and runs the team's program on it. Each answer line becomes one frame.
@@ -326,7 +326,7 @@ Secret Santa's correct end state is a picture: Santa in his sleigh with a sack, 
 | --- | --- | --- | --- |
 | 7.1 | Secret Santa | A 48-row tree with 1,176 bulbs. The script paints a scrambled picture, then runs billion-pass loops of `ROTATE`, `MIRROR`, `CHASE`, and `CYCLE` that unscramble it | Any inexact instruction. One wrong step leaves a scramble instead of Santa |
 
-The spec only promises 16 rows for Rounds 1 to 6, and every worked example uses 3 or 4 rows, so a team that read `SIZE` from the start loses nothing on the larger tree.
+The spec only promises 16 rows for Rounds 1 to 6, and the worked example uses 3 rows, so a team that read `SIZE` from the start loses nothing on the larger tree.
 
 Every fetch varies the picture. The sleigh faces left or right, sits a few bulbs to either side, and carries a sack in a different colour. So a team that spots Santa on the feed still has to run its own script to find out which version it got.
 

@@ -34,7 +34,7 @@ func TestCutDownNested(t *testing.T) {
 }
 
 func TestSampleBillionLoop(t *testing.T) {
-	s := load(t, "6-silent-night.txt")
+	s := load(t, "silent-night.txt")
 	p := Sample(s, 120)
 	if len(p.Frames) == 0 || len(p.Frames) > 120 {
 		t.Fatalf("%d frames", len(p.Frames))

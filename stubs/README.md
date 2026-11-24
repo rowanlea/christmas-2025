@@ -1,6 +1,6 @@
 # Starter stubs
 
-Each stub reads the script from stdin and prints a tree of all-off bulbs (`K`). Start writing your emulator where the comment says so. Run it against the examples from the repo root:
+Each stub reads the script from stdin and prints a tree of all-off bulbs (`K`). Start writing your emulator where the comment says so. Run it against the worked example from the repo root:
 
 - Python (`stubs/python/emulator.py`): `hth test examples -- python3 stubs/python/emulator.py`
 - JavaScript (`stubs/javascript/emulator.js`): `hth test examples -- node stubs/javascript/emulator.js`

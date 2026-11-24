@@ -22,10 +22,10 @@ func TestHthTestReportsFailures(t *testing.T) {
 		t.Fatalf("exit = %d, want 1; stderr: %s", code, errb.String())
 	}
 	s := strings.TrimSpace(out.String())
-	if !strings.Contains(s, "0/8 passed") {
+	if !strings.Contains(s, "0/1 passed") {
 		t.Errorf("stdout = %q", s)
 	}
-	if !strings.Contains(s, "FAIL 1-lights-on: wrong bulbs at (0,0)") {
+	if !strings.Contains(s, "FAIL worked-example: wrong bulbs at (0,0)") {
 		t.Errorf("missing diff line in %q", s)
 	}
 }

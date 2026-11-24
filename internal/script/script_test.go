@@ -9,7 +9,7 @@ import (
 
 func load(t *testing.T, name string) Script {
 	t.Helper()
-	b, err := os.ReadFile("../../examples/" + name)
+	b, err := os.ReadFile("testdata/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func equalNodes(a, b []Node) bool {
 }
 
 func TestParseNested(t *testing.T) {
-	s := load(t, "5-long-haul.txt")
+	s := load(t, "long-haul.txt")
 	want := []Node{
 		step("SET 0 0 R"), step("ROW 3 B"),
 		loop(0, step("FILL W")),
@@ -79,7 +79,7 @@ func TestParseErrors(t *testing.T) {
 }
 
 func TestStepsCountsArithmetically(t *testing.T) {
-	s := load(t, "6-silent-night.txt")
+	s := load(t, "silent-night.txt")
 	if got := s.Steps().String(); got != "3000000002" {
 		t.Fatalf("got %s", got)
 	}

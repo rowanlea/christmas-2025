@@ -1,4 +1,4 @@
-# Lights On — fill, set, row and rotate
+# Worked example: fill, set, row and rotate
 # expect: RRGRGW
 SIZE 3
 FILL G
