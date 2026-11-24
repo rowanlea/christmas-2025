@@ -36,13 +36,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return login(args[1:], stdout, stderr)
 	case "test":
 		return testCmd(args[1:], stdout, stderr)
-	case "run", "show":
+	case "run":
+		return runCmd(args[1:], stdout, stderr)
+	case "show":
 		if _, _, ok := splitProgram(args[1:]); !ok {
 			fmt.Fprintf(stderr, "hth %s: separate the program command with --\n%s", args[0], usage)
 			return 2
-		}
-		if args[0] == "run" {
-			return runCmd(args[1:], stdout, stderr)
 		}
 		return notImplemented(stderr, args[0])
 	case "viewer":

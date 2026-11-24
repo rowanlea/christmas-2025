@@ -147,8 +147,34 @@ func TestRunServerDown(t *testing.T) {
 }
 
 func TestRunUsage(t *testing.T) {
-	code, _, errs := runCapture("run", "--", "x")
-	if code != 1 || !strings.Contains(errs, "hth: usage: hth run <puzzle> -- <command…>") {
+	for _, args := range [][]string{
+		{"run", "--", "x"},
+		{"run", "1.1", "--"},
+		{"run", "1.1"},
+		{"run"},
+	} {
+		code, _, errs := runCapture(args...)
+		if code != 1 || !strings.Contains(errs, "hth: usage: hth run <puzzle> -- <command…>") {
+			t.Errorf("%v: code = %d, stderr %q", args, code, errs)
+		}
+	}
+}
+
+func TestRunNotLoggedInEmptySecret(t *testing.T) {
+	t.Setenv("HTH_CONFIG", t.TempDir()+"/config.json")
+	if err := api.SaveConfig(api.Config{Server: "http://127.0.0.1:1/", Team: "team-07"}); err != nil {
+		t.Fatal(err)
+	}
+	code, _, errs := runCapture("run", "1.1", "--", programtest.FakePath(t), "echo-k")
+	if code != 1 || !strings.Contains(errs, "not logged in; run hth login <team>") {
 		t.Errorf("code = %d, stderr %q", code, errs)
+	}
+}
+
+func TestRunStreamsProgramStderr(t *testing.T) {
+	setup(t, &fakeAPI{})
+	_, _, errs := runCapture("run", "1.1", "--", programtest.FakePath(t), "stderr")
+	if !strings.Contains(errs, "hello from stderr") {
+		t.Errorf("stderr = %q", errs)
 	}
 }

@@ -71,11 +71,11 @@ func TestUnknownCommand(t *testing.T) {
 
 func TestRunWithoutSeparator(t *testing.T) {
 	code, _, stderr := runCapture("run", "3.2", "python")
-	if code != 2 {
-		t.Fatalf("code = %d, want 2", code)
+	if code != 1 {
+		t.Fatalf("code = %d, want 1", code)
 	}
-	if !strings.Contains(stderr, "--") {
-		t.Errorf("stderr should mention --: %q", stderr)
+	if !strings.Contains(stderr, "hth: usage: hth run <puzzle> -- <command…>") {
+		t.Errorf("stderr should carry the run usage line: %q", stderr)
 	}
 }
 
