@@ -2,9 +2,48 @@ package main
 
 import (
 	"bytes"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"hth/internal/api"
 )
+
+func TestLoginWithSecretSkipsServer(t *testing.T) {
+	t.Setenv("HTH_CONFIG", filepath.Join(t.TempDir(), "config.json"))
+	code, _, errs := runCapture("login", "team-07", "--secret", "abc", "--server", "http://127.0.0.1:1/")
+	if code != 0 {
+		t.Fatalf("code %d stderr %q", code, errs)
+	}
+	cfg, err := api.LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Team != "team-07" || cfg.Secret != "abc" || cfg.Server != "http://127.0.0.1:1/" {
+		t.Fatalf("cfg %+v", cfg)
+	}
+}
+
+func TestLoginRegistersWithoutSecret(t *testing.T) {
+	t.Setenv("HTH_CONFIG", filepath.Join(t.TempDir(), "config.json"))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/register/team-07" {
+			t.Errorf("path %s", r.URL.Path)
+		}
+		w.Write([]byte(`"zzz"`))
+	}))
+	defer srv.Close()
+	code, out, errs := runCapture("login", "team-07", "--server", srv.URL)
+	if code != 0 {
+		t.Fatalf("code %d stderr %q", code, errs)
+	}
+	want := "Logged in as team-07. Secret: zzz\nShare this secret with your pair: hth login team-07 --secret zzz\n"
+	if out != want {
+		t.Fatalf("out %q", out)
+	}
+}
 
 func runCapture(args ...string) (int, string, string) {
 	var out, errb bytes.Buffer
