@@ -92,9 +92,26 @@ func TestBackgroundAvoidsPalette(t *testing.T) {
 
 func TestBackgroundColourBudget(t *testing.T) {
 	for _, n := range sizes {
-		if got := len(backgroundColours(n)); got > 240 {
-			t.Errorf("size %d: %d background colours, want <= 240", n, got)
+		if got := len(backgroundColours(n)); got > MaxBackgroundColours {
+			t.Errorf("size %d: %d background colours, want <= %d", n, got, MaxBackgroundColours)
 		}
+		if got := len(Palette(n)); got > 256 {
+			t.Errorf("size %d: palette has %d colours, a GIF holds 256", n, got)
+		}
+	}
+}
+
+func TestColourBudgetLeavesRoomForTheDrawing(t *testing.T) {
+	added := map[color.RGBA]bool{BgColour: true}
+	for _, s := range []byte("RGBWK") {
+		added[toRGBA(tree.Colour(s))] = true
+	}
+	for _, c := range drawColours() {
+		added[c] = true
+	}
+	if got := MaxBackgroundColours + len(added); got > 256 {
+		t.Errorf("%d background colours plus %d drawing colours is %d, over the 256 of a GIF palette",
+			MaxBackgroundColours, len(added), got)
 	}
 }
 

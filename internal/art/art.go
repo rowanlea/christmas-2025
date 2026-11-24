@@ -163,6 +163,11 @@ func toRGBA(c color.Color) color.RGBA {
 	return color.RGBA{R: uint8(r >> 8), G: uint8(g >> 8), B: uint8(b >> 8), A: 0xFF}
 }
 
+// MaxBackgroundColours is the most distinct colours an asset PNG may use. The
+// GIF palette adds the caption bar colour, the five bulb colours and the
+// colours DrawFrame draws (17 in all), and a GIF palette holds 256.
+const MaxBackgroundColours = 239
+
 func backgroundColours(size int) []color.RGBA {
 	return load(size).colours
 }

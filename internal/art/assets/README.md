@@ -22,9 +22,10 @@ answer are drawn as unlit sockets. Any other size falls back to a plain
 - Do not use any colour within squared RGB distance 3000 of the bulb
   colours `#FF0000`, `#00FF00`, `#0000FF`, `#FFFFFF`, `#303030`, so a lit
   bulb never blends into the decoration. `go test ./internal/art` checks this.
-- Use at most 240 distinct colours per PNG (no anti-aliasing gradients
-  across the whole picture), so the GIF needs no dithering. The same test
-  checks this.
+- Use at most 239 distinct colours per PNG (no anti-aliasing gradients
+  across the whole picture), so the GIF needs no dithering. The GIF palette
+  adds 17 colours of its own (caption bar, bulbs, sockets and halos) and
+  holds 256 in all. The same test checks this.
 - Keep bulb positions free of anything but the socket and wire. Bulbs are
   drawn over the background at the positions in `bulbs-<n>.json`; keep that
   table in answer order, with `y` never decreasing and `x` increasing within
