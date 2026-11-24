@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"hth/internal/api"
+	"hth/internal/viewer"
 )
 
 var version = "dev"
@@ -45,7 +46,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		}
 		return notImplemented(stderr, args[0])
 	case "viewer":
-		return notImplemented(stderr, "viewer")
+		if err := viewer.Serve(viewer.Addr()); err != nil {
+			fmt.Fprintf(stderr, "hth viewer: %v\n", err)
+			return 1
+		}
+		return 0
 	default:
 		fmt.Fprintf(stderr, "hth: unknown command %q\n%s", args[0], usage)
 		return 2

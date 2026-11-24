@@ -10,6 +10,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io/fs"
 	"sort"
 	"sync"
 
@@ -18,6 +19,15 @@ import (
 
 //go:embed assets/*
 var assets embed.FS
+
+// Assets returns the embedded asset files, rooted at the assets folder.
+func Assets() fs.FS {
+	sub, err := fs.Sub(assets, "assets")
+	if err != nil {
+		panic(err)
+	}
+	return sub
+}
 
 // Canvas is the side of the square background and bulb coordinate space.
 const Canvas = 1200
