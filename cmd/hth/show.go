@@ -96,7 +96,10 @@ func showFile(path string, argv []string, stdout, stderr io.Writer) error {
 		fmt.Fprintf(stdout, "Saved %s\n", gifPath)
 	}
 
-	frames := append(kept, answer)
+	frames := kept
+	if len(kept) == 0 || kept[len(kept)-1] != answer {
+		frames = append(frames, answer)
+	}
 	if err := client.UploadShow(frames); err != nil {
 		return err
 	}

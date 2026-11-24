@@ -114,7 +114,7 @@ func TestShowUploadsEveryStep(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("code = %d, stderr %q", code, errs)
 	}
-	if len(api.uploads) != 1 || len(api.uploads[0]) != 13 {
+	if len(api.uploads) != 1 || len(api.uploads[0]) != 12 {
 		t.Fatalf("uploads = %d, frames %v", len(api.uploads), len(api.uploads))
 	}
 	for i, f := range api.uploads[0] {
@@ -122,7 +122,7 @@ func TestShowUploadsEveryStep(t *testing.T) {
 			t.Errorf("frame %d has %d chars, want 136", i, len(f))
 		}
 	}
-	if !strings.Contains(out, "Show uploaded: 13 frames (about 2 seconds on the big screen)") {
+	if !strings.Contains(out, "Show uploaded: 12 frames (about 2 seconds on the big screen)") {
 		t.Errorf("stdout = %q", out)
 	}
 	if strings.Contains(out, "were skipped") {
@@ -155,11 +155,28 @@ func TestShowReportsSkippedSteps(t *testing.T) {
 		t.Fatalf("code = %d, stderr %q", code, errs)
 	}
 	skipped := strings.Index(out, "1 steps were skipped because the program failed on them")
-	uploaded := strings.Index(out, "Show uploaded: 12 frames")
+	uploaded := strings.Index(out, "Show uploaded: 11 frames")
 	if skipped < 0 || uploaded < 0 || skipped > uploaded {
 		t.Errorf("stdout = %q", out)
 	}
-	if len(api.uploads) != 1 || len(api.uploads[0]) != 12 {
+	if len(api.uploads) != 1 || len(api.uploads[0]) != 11 {
 		t.Errorf("uploads = %v", len(api.uploads))
+	}
+}
+
+func TestShowFiveHundredStepsUploadsFiveHundredFrames(t *testing.T) {
+	api := &showAPI{}
+	api.start(t)
+	file := writeShow(t, "max.txt", "SIZE 16", 500)
+	code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "count")
+	if code != 0 {
+		t.Fatalf("code = %d, stderr %q", code, errs)
+	}
+	if len(api.uploads) != 1 || len(api.uploads[0]) != 500 {
+		t.Fatalf("uploads = %d, frames %d, want 1 upload of 500", len(api.uploads), len(api.uploads[0]))
+	}
+	f := api.uploads[0]
+	if f[498] == f[499] {
+		t.Errorf("last two frames are identical")
 	}
 }
