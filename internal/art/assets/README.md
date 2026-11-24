@@ -6,7 +6,7 @@ formats exactly as they are.
 
 | File | What it is |
 | --- | --- |
-| `tree-<n>.png` | 1200 x 1200 background for a tree of `<n>` rows: tree, trunk and stand on `#0A0E14`, no bulbs. |
+| `tree-<n>.png` | 1200 x 1200 background for the `<n>`-row grid: a night scene around `#0A0E14` with a layered fir, trunk, pot and snow, a dark light-string wire in wiring order and a small brass socket at every bulb position but the star's. No bulbs. |
 | `bulbs-<n>.json` | `[{"x":600,"y":120,"r":21.3}, ...]`: one entry per bulb, in answer order (row by row from the star, left to right). Numbers may have decimals. |
 
 Only two grids have assets: 16 and 48. Every tree is drawn on one of them:
@@ -25,9 +25,10 @@ answer are drawn as unlit sockets. Any other size falls back to a plain
 - Use at most 240 distinct colours per PNG (no anti-aliasing gradients
   across the whole picture), so the GIF needs no dithering. The same test
   checks this.
-- Leave the bulb areas empty. Bulbs are drawn over the background at the
-  positions in `bulbs-<n>.json`; keep that table in answer order, with `y`
-  never decreasing and `x` increasing within a row.
+- Keep bulb positions free of anything but the socket and wire. Bulbs are
+  drawn over the background at the positions in `bulbs-<n>.json`; keep that
+  table in answer order, with `y` never decreasing and `x` increasing within
+  a row.
 
 ## Regenerating
 

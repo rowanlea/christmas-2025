@@ -28,19 +28,51 @@ var SocketColour = color.RGBA{R: 0x6A, G: 0x4A, B: 0x12, A: 0xFF}
 var wellColour = color.RGBA{R: 0x05, G: 0x06, B: 0x07, A: 0xFF}
 
 const (
-	wellScale = 0.8
-	capScale  = 0.38
+	wellScale = 0.42
+	capScale  = 0.26
+)
+
+// look is how a bulb state is drawn in a GIF frame: a lit bulb has a halo,
+// solid near the bulb and dithered further out, and every bulb has a small
+// glint on its glass, so Off reads as an unlit glass bulb.
+type look struct {
+	lit         bool
+	halo, glint color.RGBA
+}
+
+var looks = map[byte]look{
+	'R': {true, color.RGBA{R: 0xB0, G: 0x20, B: 0x1C, A: 0xFF}, color.RGBA{R: 0xFF, G: 0xA8, B: 0x98, A: 0xFF}},
+	'G': {true, color.RGBA{R: 0x2A, G: 0xB0, B: 0x40, A: 0xFF}, color.RGBA{R: 0xC8, G: 0xFF, B: 0xC8, A: 0xFF}},
+	'B': {true, color.RGBA{R: 0x28, G: 0x38, B: 0xC8, A: 0xFF}, color.RGBA{R: 0xA8, G: 0xB8, B: 0xFF, A: 0xFF}},
+	'W': {true, color.RGBA{R: 0xC8, G: 0xC4, B: 0xA0, A: 0xFF}, color.RGBA{R: 0xFF, G: 0xF0, B: 0xC0, A: 0xFF}},
+	'K': {false, color.RGBA{}, color.RGBA{R: 0x74, G: 0x74, B: 0x6C, A: 0xFF}},
+}
+
+const (
+	haloSolid  = 1.28
+	haloOuter  = 1.62
+	glintShift = 0.36
+	glintScale = 0.22
 )
 
 func drawColours() []color.RGBA {
-	return []color.RGBA{SocketColour, wellColour}
+	out := []color.RGBA{SocketColour, wellColour}
+	for _, s := range []byte("RGBWK") {
+		l := looks[s]
+		if l.lit {
+			out = append(out, l.halo)
+		}
+		out = append(out, l.glint)
+	}
+	return out
 }
 
 // DrawFrame draws the tree for size onto dst: the grid background scaled by
 // scale (nearest-neighbour), then bulb i of line on entry i of the grid's bulb
-// table in its state colour. Bulb 0 is a five-point star and the rest are
-// discs. Grid entries beyond the line, and characters outside RGBWK, are drawn
-// as unlit sockets. dst must use Palette(size).
+// table in its state colour, with a halo around lit bulbs. Bulb 0 is a
+// five-point star and the rest are discs. Grid entries beyond the line, and
+// characters outside RGBWK, are drawn as unlit sockets. dst must use
+// Palette(size).
 func DrawFrame(dst *image.Paletted, size int, line string, scale float64) {
 	grid := Grid(size)
 	e := load(grid)
@@ -48,25 +80,40 @@ func DrawFrame(dst *image.Paletted, size int, line string, scale float64) {
 	for y := 0; y < b.Rect.Dy(); y++ {
 		copy(dst.Pix[y*dst.Stride:y*dst.Stride+b.Rect.Dx()], b.Pix[y*b.Stride:y*b.Stride+b.Rect.Dx()])
 	}
-	var index [256]uint8
-	var known [256]bool
-	for _, s := range []byte("RGBWK") {
-		index[s] = uint8(dst.Palette.Index(tree.Colour(s)))
-		known[s] = true
+	ix := func(c color.Color) uint8 { return uint8(dst.Palette.Index(c)) }
+	state := func(i int) byte {
+		if i < len(line) {
+			if _, ok := looks[line[i]]; ok {
+				return line[i]
+			}
+		}
+		return 0
 	}
-	socket := uint8(dst.Palette.Index(SocketColour))
-	well := uint8(dst.Palette.Index(wellColour))
+	shape := func(i int, cx, cy, r, grow float64, idx uint8, checker bool) {
+		if i == 0 {
+			fillStar(dst, cx, cy, r*starScale*grow, idx, checker)
+		} else {
+			fillDisc(dst, cx, cy, r*grow, idx, checker)
+		}
+	}
+	for i, bulb := range e.bulbs {
+		if l := looks[state(i)]; l.lit {
+			cx, cy, r := bulb.X*scale, bulb.Y*scale, bulb.R*scale
+			shape(i, cx, cy, r, haloOuter, ix(l.halo), true)
+			shape(i, cx, cy, r, haloSolid, ix(l.halo), false)
+		}
+	}
 	for i, bulb := range e.bulbs {
 		cx, cy, r := bulb.X*scale, bulb.Y*scale, bulb.R*scale
-		if i >= len(line) || !known[line[i]] {
-			fillDisc(dst, cx, cy, r*wellScale, well)
-			fillDisc(dst, cx, cy, r*capScale, socket)
+		s := state(i)
+		if s == 0 {
+			fillDisc(dst, cx, cy, r*wellScale, ix(wellColour), false)
+			fillDisc(dst, cx, cy, r*capScale, ix(SocketColour), false)
 			continue
 		}
-		if i == 0 {
-			fillStar(dst, cx, cy, r*starScale, index[line[i]])
-		} else {
-			fillDisc(dst, cx, cy, r, index[line[i]])
+		shape(i, cx, cy, r, 1, ix(tree.Colour(s)), false)
+		if i > 0 {
+			fillDisc(dst, cx-glintShift*r, cy-glintShift*r, max(glintScale*r, 0.71), ix(looks[s].glint), false)
 		}
 	}
 }
@@ -100,11 +147,11 @@ func base(e *entry, size int, dst *image.Paletted, scale float64) *image.Palette
 	return b
 }
 
-func fillDisc(dst *image.Paletted, cx, cy, r float64, idx uint8) {
+func fillDisc(dst *image.Paletted, cx, cy, r float64, idx uint8, checker bool) {
 	scanBox(dst, cx-r, cy-r, cx+r, cy+r, func(x, y float64) bool {
 		dx, dy := x-cx, y-cy
 		return dx*dx+dy*dy <= r*r
-	}, idx)
+	}, idx, checker)
 }
 
 const (
@@ -112,7 +159,7 @@ const (
 	starInner = 0.5
 )
 
-func fillStar(dst *image.Paletted, cx, cy, outer float64, idx uint8) {
+func fillStar(dst *image.Paletted, cx, cy, outer float64, idx uint8, checker bool) {
 	var vx, vy [10]float64
 	for k := 0; k < 10; k++ {
 		rad := outer
@@ -130,14 +177,18 @@ func fillStar(dst *image.Paletted, cx, cy, outer float64, idx uint8) {
 			}
 		}
 		return in
-	}, idx)
+	}, idx, checker)
 }
 
-// scanBox sets every pixel of dst in the box whose centre satisfies inside.
-func scanBox(dst *image.Paletted, x0, y0, x1, y1 float64, inside func(x, y float64) bool, idx uint8) {
+// scanBox sets every pixel of dst in the box whose centre satisfies inside,
+// or with checker only every other pixel, in a checkerboard.
+func scanBox(dst *image.Paletted, x0, y0, x1, y1 float64, inside func(x, y float64) bool, idx uint8, checker bool) {
 	b := dst.Rect
 	for py := max(int(math.Floor(y0))-1, 0); py <= min(int(math.Ceil(y1))+1, b.Dy()-1); py++ {
 		for px := max(int(math.Floor(x0))-1, 0); px <= min(int(math.Ceil(x1))+1, b.Dx()-1); px++ {
+			if checker && (px+py)%2 == 1 {
+				continue
+			}
 			if inside(float64(px)+0.5, float64(py)+0.5) {
 				dst.Pix[py*dst.Stride+px] = idx
 			}
