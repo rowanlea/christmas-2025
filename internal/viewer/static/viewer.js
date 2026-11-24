@@ -194,21 +194,28 @@ function loop(time) {
   requestAnimationFrame(loop);
 }
 
+let syncSeq = 0;
+let events = null;
+
 async function sync() {
+  const seq = ++syncSeq;
+  const startEpoch = epoch;
   try {
     const res = await fetch('/latest');
     if (res.status !== 200) return;
     const l = await res.json();
+    if (seq !== syncSeq || epoch !== startEpoch) return;
     if (!current || current.id !== l.publication.id) show(l.publication);
     for (const f of l.frames) onFrame(f);
     for (const d of l.done) onDone(d);
   } catch (e) {
-    statusEl.textContent = 'daemon unreachable';
+    if (!events || events.readyState !== EventSource.OPEN) statusEl.textContent = 'daemon unreachable';
   }
 }
 
 function start() {
   const es = new EventSource('/events');
+  events = es;
   es.onopen = () => {
     statusEl.textContent = 'live';
     sync();
