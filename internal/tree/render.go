@@ -32,7 +32,7 @@ func Render(line string, size int) ([]byte, error) {
 	for r := 0; r < size; r++ {
 		for p := 0; p <= r; p++ {
 			cx, cy := Centre(size, r, p)
-			fill(img, cx, cy, rad, palette[line[i]])
+			fill(img, cx, cy, rad, Colour(line[i]))
 			i++
 		}
 	}
@@ -55,4 +55,9 @@ func fill(img *image.NRGBA, cx, cy, rad float64, c color.NRGBA) {
 			}
 		}
 	}
+}
+
+// Colour returns the bulb colour for an answer character (R, G, B, W or K).
+func Colour(state byte) color.NRGBA {
+	return palette[state]
 }
