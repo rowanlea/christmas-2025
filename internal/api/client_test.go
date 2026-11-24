@@ -155,6 +155,9 @@ func TestErrorMapping(t *testing.T) {
 		{404, `{"error":"unknown puzzle"}`, "unknown puzzle"},
 		{409, `{"error":"x"}`, "challenge already submitted; run again for a fresh one"},
 		{410, `{"error":"x"}`, "challenge expired (5 minutes); run again for a fresh one"},
+		{400, `{"error":"a show has 1 to 500 frames"}`, "request refused (400): a show has 1 to 500 frames"},
+		{413, `{"error":"too big"}`, "request refused (413): too big"},
+		{429, `{"error":"slow down"}`, "request refused (429): slow down"},
 		{500, `{"error":"boom"}`, "server error 500: boom"},
 		{502, "  bad gateway \n", "server error 502: bad gateway"},
 	}

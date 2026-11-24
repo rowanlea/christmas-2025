@@ -98,7 +98,11 @@ func showFile(path string, argv []string, stdout, stderr io.Writer) error {
 
 	frames := kept
 	if len(kept) == 0 || kept[len(kept)-1] != answer {
-		frames = append(frames, answer)
+		if len(kept) >= maxShowSteps {
+			frames = append(kept[:maxShowSteps-1:maxShowSteps-1], answer)
+		} else {
+			frames = append(frames, answer)
+		}
 	}
 	if err := client.UploadShow(frames); err != nil {
 		return err

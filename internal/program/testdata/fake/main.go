@@ -60,6 +60,14 @@ func main() {
 			os.Exit(1)
 		}
 		count(script)
+	case "first-call-k":
+		script := readScript()
+		if _, err := os.Stat(arg); err != nil {
+			os.WriteFile(arg, nil, 0o644)
+			echoK(script)
+			return
+		}
+		count(script)
 	case "log":
 		script := readScript()
 		f, err := os.OpenFile(arg, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)

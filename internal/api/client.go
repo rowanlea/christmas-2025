@@ -54,6 +54,9 @@ func (e *APIError) Error() string {
 	case 410:
 		return "challenge expired (5 minutes); run again for a fresh one"
 	}
+	if e.Status >= 400 && e.Status < 500 {
+		return fmt.Sprintf("request refused (%d): %s", e.Status, e.Message)
+	}
 	return fmt.Sprintf("server error %d: %s", e.Status, e.Message)
 }
 

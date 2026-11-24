@@ -180,3 +180,20 @@ func TestShowFiveHundredStepsUploadsFiveHundredFrames(t *testing.T) {
 		t.Errorf("last two frames are identical")
 	}
 }
+
+func TestShowNeverUploadsMoreThanFiveHundredFrames(t *testing.T) {
+	api := &showAPI{}
+	api.start(t)
+	file := writeShow(t, "max.txt", "SIZE 16", 500)
+	marker := filepath.Join(t.TempDir(), "called")
+	code, _, errs := runCapture("show", file, "--", programtest.FakePath(t), "first-call-k", marker)
+	if code != 0 {
+		t.Fatalf("code = %d, stderr %q", code, errs)
+	}
+	if len(api.uploads) != 1 || len(api.uploads[0]) != 500 {
+		t.Fatalf("uploads = %d, frames %d, want 1 upload of 500", len(api.uploads), len(api.uploads[0]))
+	}
+	if want := strings.Repeat("K", 136); api.uploads[0][499] != want {
+		t.Errorf("last frame = %q, want the answer %q", api.uploads[0][499], want)
+	}
+}
