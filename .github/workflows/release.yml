@@ -29,6 +29,8 @@ jobs:
             stage=$(mktemp -d)
             CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.version=${TAG}" -o "$stage/$exe" ./cmd/hth
             cp -r examples stubs README.md "$stage/"
+            mkdir "$stage/docs"
+            cp docs/spec.md "$stage/docs/spec.md"
             rm -rf "$stage/stubs/csharp/bin" "$stage/stubs/csharp/obj" "$stage/stubs/stubs_test.go"
             (cd "$stage" && zip -qr "$GITHUB_WORKSPACE/dist/hth-$os-$arch.zip" .)
           done

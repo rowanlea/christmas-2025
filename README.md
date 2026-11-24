@@ -4,7 +4,7 @@
 
 ## Install
 
-Download the zip for your machine from the GitHub release (`hth-darwin-arm64.zip`, `hth-darwin-amd64.zip`, `hth-linux-amd64.zip`, `hth-linux-arm64.zip` or `hth-windows-amd64.zip`), unzip it, and put `hth` (`hth.exe` on Windows) on your `PATH`. The zip also holds `examples/`, `stubs/` and this README.
+Download the zip for your machine from the GitHub release (`hth-darwin-arm64.zip`, `hth-darwin-amd64.zip`, `hth-linux-amd64.zip`, `hth-linux-arm64.zip` or `hth-windows-amd64.zip`), unzip it, and put `hth` (`hth.exe` on Windows) on your `PATH`. The zip also holds `examples/`, `stubs/`, `docs/spec.md` and this README.
 
 On macOS the binary is unsigned, so clear the quarantine flag once:
 
