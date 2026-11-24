@@ -149,10 +149,11 @@ class Player {
 
   finish() {
     this.finished = true;
-    if (this.card.answer) this.states = this.card.answer;
+    const answer = this.card.answer;
+    if (answer) this.states = answer;
     if (this.hasExpected) {
-      this.ringed = differing(this.states, this.card.expected);
-      const pass = this.ringed.length === 0;
+      if (answer) this.ringed = differing(answer, this.card.expected);
+      const pass = !!answer && this.ringed.length === 0;
       this.badge.textContent = pass ? 'PASS' : 'FAIL';
       this.badge.className = 'badge ' + (pass ? 'pass' : 'fail');
       this.badge.hidden = false;
@@ -193,20 +194,25 @@ function loop(time) {
   requestAnimationFrame(loop);
 }
 
-async function start() {
+async function sync() {
   try {
     const res = await fetch('/latest');
-    if (res.status === 200) {
-      const l = await res.json();
-      show(l.publication);
-      for (const f of l.frames) onFrame(f);
-      for (const d of l.done) onDone(d);
-    }
+    if (res.status !== 200) return;
+    const l = await res.json();
+    if (!current || current.id !== l.publication.id) show(l.publication);
+    for (const f of l.frames) onFrame(f);
+    for (const d of l.done) onDone(d);
   } catch (e) {
     statusEl.textContent = 'daemon unreachable';
   }
+}
+
+function start() {
   const es = new EventSource('/events');
-  es.onopen = () => { statusEl.textContent = 'live'; };
+  es.onopen = () => {
+    statusEl.textContent = 'live';
+    sync();
+  };
   es.onerror = () => { statusEl.textContent = 'reconnecting'; };
   es.addEventListener('publication', (e) => show(JSON.parse(e.data)));
   es.addEventListener('frame', (e) => onFrame(JSON.parse(e.data)));
