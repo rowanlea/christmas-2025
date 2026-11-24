@@ -357,3 +357,24 @@ func TestNeighbouringHalosNeverTouch(t *testing.T) {
 		}
 	}
 }
+
+func TestWriteGIFCaptionsTheFinalHold(t *testing.T) {
+	const n = 3
+	line := strings.Repeat("K", tree.BulbCount(n))
+	g := decodeGIF(t, n, []string{line}, map[int]string{1: "9 passes later"}, line)
+	white := color.RGBA{255, 255, 255, 255}
+	ink := func(im *image.Paletted) int {
+		c := 0
+		for y := 0; y < 600; y++ {
+			for x := 0; x < 600; x++ {
+				if rgb(im.At(x, y)) == white {
+					c++
+				}
+			}
+		}
+		return c
+	}
+	if ink(g.Image[0]) != 0 || ink(g.Image[1]) == 0 {
+		t.Errorf("ink: frame %d, final hold %d; want only the final hold captioned", ink(g.Image[0]), ink(g.Image[1]))
+	}
+}

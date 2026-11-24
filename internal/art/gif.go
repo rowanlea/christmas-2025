@@ -19,7 +19,8 @@ const (
 // WriteGIF writes an animated 600 x 600 GIF of the tree for size: one frame
 // per entry of frames at 100 ms, then final held for 2 s. captions maps a
 // zero-based index into frames to a caption bar for that frame (digits,
-// commas, spaces and the letters of "passes later" only).
+// commas, spaces and the letters of "passes later" only). The entry at
+// len(frames) captions the final hold.
 func WriteGIF(path string, size int, frames []string, captions map[int]string, final string) error {
 	pal := Palette(size)
 	bg := uint8(pal.Index(BgColour))
@@ -42,7 +43,7 @@ func WriteGIF(path string, size int, frames []string, captions map[int]string, f
 			return err
 		}
 	}
-	if err := add(final, "", finalHold); err != nil {
+	if err := add(final, captions[len(frames)], finalHold); err != nil {
 		return err
 	}
 	f, err := os.Create(path)

@@ -69,6 +69,9 @@ func Animate(ctx context.Context, argv []string, plan script.Plan, size int, fin
 		kept = append(kept, answers[i])
 		carried = 0
 	}
+	if tail := plan.SkippedAtEnd + carried; tail > 0 {
+		captions[len(kept)] = Caption(tail)
+	}
 	if sess != nil {
 		sess.Done(card, plan.SkippedAtEnd+carried)
 	}
