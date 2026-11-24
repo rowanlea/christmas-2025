@@ -23,6 +23,9 @@ func Load(dir string) ([]Example, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no .txt examples in %s", dir)
+	}
 	sort.Strings(files)
 	var out []Example
 	for _, f := range files {

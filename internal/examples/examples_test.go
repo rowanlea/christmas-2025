@@ -30,3 +30,22 @@ func TestMissingExpectIsError(t *testing.T) {
 		t.Fatalf("err = %v, want error naming x.txt", err)
 	}
 }
+
+func TestEmptyDirIsError(t *testing.T) {
+	dir := t.TempDir()
+	_, err := Load(dir)
+	if err == nil || !strings.Contains(err.Error(), "no .txt examples") {
+		t.Fatalf("err = %v, want no .txt examples error", err)
+	}
+}
+
+func TestMissingSizeIsError(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "y.txt"), []byte("# expect: R\nFILL R\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Load(dir)
+	if err == nil || !strings.Contains(err.Error(), "y.txt") || !strings.Contains(err.Error(), "SIZE") {
+		t.Fatalf("err = %v, want SIZE error naming y.txt", err)
+	}
+}
