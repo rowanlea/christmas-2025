@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/gif"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -338,6 +339,21 @@ func TestSocketNeverLooksLikeABulbState(t *testing.T) {
 		dr, dg, db := int(SocketColour.R)-int(p.R), int(SocketColour.G)-int(p.G), int(SocketColour.B)-int(p.B)
 		if d := dr*dr + dg*dg + db*db; d < 3000 {
 			t.Errorf("socket colour %v is within %d of %c", SocketColour, d, s)
+		}
+	}
+}
+
+func TestNeighbouringHalosNeverTouch(t *testing.T) {
+	for _, n := range []int{16, 48} {
+		_, bulbs := Load(n)
+		for i := range bulbs {
+			for j := i + 1; j < len(bulbs); j++ {
+				a, b := bulbs[i], bulbs[j]
+				d := math.Hypot(b.X-a.X, b.Y-a.Y)
+				if reach := haloRadius(i, a.R) + haloRadius(j, b.R); reach >= d {
+					t.Fatalf("grid %d: halos of bulbs %d and %d reach %.1f, centres %.1f apart", n, i, j, reach, d)
+				}
+			}
 		}
 	}
 }

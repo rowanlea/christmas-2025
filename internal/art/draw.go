@@ -49,11 +49,33 @@ var looks = map[byte]look{
 }
 
 const (
-	haloSolid  = 1.28
-	haloOuter  = 1.62
-	glintShift = 0.36
-	glintScale = 0.22
+	haloSolid = 1.1
+	haloOuter = 1.4
+	// The star is bigger than a disc, so its halo grows it less.
+	starHaloSolid = 1.05
+	starHaloOuter = 1.2
+	glintShift    = 0.36
+	glintScale    = 0.22
 )
+
+// haloGrow is how far the solid and dithered halo steps of bulb i grow its
+// shape. The star's shape is already starScale times the bulb radius.
+func haloGrow(i int) (solid, outer float64) {
+	if i == 0 {
+		return starHaloSolid, starHaloOuter
+	}
+	return haloSolid, haloOuter
+}
+
+// haloRadius is how far the halo of bulb i, of radius r, reaches from its
+// centre.
+func haloRadius(i int, r float64) float64 {
+	_, outer := haloGrow(i)
+	if i == 0 {
+		return r * starScale * outer
+	}
+	return r * outer
+}
 
 func drawColours() []color.RGBA {
 	out := []color.RGBA{SocketColour, wellColour}
@@ -99,8 +121,9 @@ func DrawFrame(dst *image.Paletted, size int, line string, scale float64) {
 	for i, bulb := range e.bulbs {
 		if l := looks[state(i)]; l.lit {
 			cx, cy, r := bulb.X*scale, bulb.Y*scale, bulb.R*scale
-			shape(i, cx, cy, r, haloOuter, ix(l.halo), true)
-			shape(i, cx, cy, r, haloSolid, ix(l.halo), false)
+			solid, outer := haloGrow(i)
+			shape(i, cx, cy, r, outer, ix(l.halo), true)
+			shape(i, cx, cy, r, solid, ix(l.halo), false)
 		}
 	}
 	for i, bulb := range e.bulbs {
