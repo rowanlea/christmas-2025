@@ -103,10 +103,6 @@ A team's loop on each puzzle:
 
 Every fetch is a new script, so a resubmission tests the emulator rather than a remembered answer. Generated scripts run to thousands of lines, with nested and billion-pass loops. Nobody traces that by hand inside five minutes, so working code is the only way through.
 
-Open questions about the online system:
-
-- [ ] API shape: fetch and submit endpoints, authentication, and the score response
-
 ## Challenge harness
 
 The harness is a single static binary, `hth`, for macOS, Windows, and Linux. It runs the team's program as a subprocess, so any language that reads stdin and writes stdout works with no SDK.
@@ -130,7 +126,7 @@ Every run shows its result as an animated tree in a viewer tab. On the first run
 
 The bulbs sit on a drawn Christmas tree, deep green with layered branches and a trunk in a stand, on a plain dark background. The star bulb at (0, 0) is drawn star-shaped and takes that bulb's state. The decoration uses no palette colours, so it never reads as a bulb state.
 
-The viewer canvas is precomputed and embedded in `hth`, so nothing is drawn from scratch at run time. For each tree size the event uses (3 and 4 rows for worked examples, 16 for puzzles and shows, and 48 for Secret Santa), the build produces:
+The viewer canvas is precomputed and embedded in `hth`, so nothing is drawn from scratch at run time. Viewer trees are drawn on one of two grids: trees of up to 16 rows on the 16-row grid, and trees of 17 to 48 rows on the 48-row grid, where a smaller tree lights the top rows of its grid. For each grid, the build produces:
 
 - a background image with the tree, trunk, and stand on a plain dark background, drawn at the canvas size
 - a table of bulb centres and radii, in answer-line order
@@ -362,30 +358,6 @@ The evening runs 18:30 to 21:30 at the Codurance office, with participants worki
 | 18:50 | Ten-minute intro: the tree, the harness, and the worked example |
 | 19:00 | Pairs form, and puzzle 1.1 opens |
 | 20:45 | Scoreboard freezes. The feed keeps showing trees, without scores |
-| 20:50 | The three-axis model and the cycle trick revealed, then two or three pairs show their designs and a few light shows play |
+| 20:50 | Reveal of the intended approach, then two or three pairs show their designs and a few light shows play |
 | 21:15 | Prizes |
 | 21:30 | Pub |
-
-## Specs and build
-
-Puzzles should be hard because of how the instructions combine. Nobody should drop points because the spec was vague, so the participant spec:
-
-- spells out the edge cases, including the wiring order, states lost under `FALL`, simultaneous growth, Off bulbs under `CYCLE`, and `REPEAT 0`
-- gives a worked example for every round on a three- or four-row tree, with the full script and answer line, in the `examples/` folder that `hth test` reads
-- never mentions the three-axis model, because finding it is part of the puzzle
-
-Tasks:
-
-- [ ] Get the API shape from the online system
-- [ ] Reference emulator, written test-first, used by both the generator and the scorer
-- [ ] Script generator for each round, with the generation checks above
-- [ ] Scorer: render the expected PNG, sample bulb centres, and return the count
-- [ ] Harness `hth`: run, test, render, submit, show, and the viewer, built for three platforms
-- [ ] Viewer canvas assets for 3, 4, 16, and 48 rows: background images and bulb tables, embedded in `hth` and shared with the scoreboard page
-- [ ] Scoreboard page: live feed, banners, and freeze behaviour
-- [ ] Light show endpoint: check for a full-marks Santa, accept the team's frames, and feed the big-screen panel
-- [ ] Dry run with two volunteers, timing each round
-- [ ] Starter stubs in common languages
-- [ ] Participant spec and worked examples
-- [ ] Pixel-art pass on the Secret Santa picture and its variants, checked in the viewer
-- [ ] Confirm the event date and room booking
