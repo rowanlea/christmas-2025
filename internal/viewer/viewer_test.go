@@ -354,3 +354,24 @@ func TestSessionNeverBlocksOnHungViewer(t *testing.T) {
 		t.Fatal("full queue should mark the session failed")
 	}
 }
+
+func TestEmbeddedAssets(t *testing.T) {
+	srv := httptest.NewServer(Handler())
+	defer srv.Close()
+	get := func(path string) (int, string) {
+		resp, err := http.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(b)
+	}
+	if code, _ := get("/static/tree.js"); code != 200 {
+		t.Errorf("/static/tree.js: %d, want 200", code)
+	}
+	code, body := get("/")
+	if code != 200 || !strings.Contains(body, `<script type="module" src="/static/viewer.js">`) {
+		t.Errorf("/: %d, missing viewer.js module script", code)
+	}
+}

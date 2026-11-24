@@ -1,0 +1,24 @@
+:root { color-scheme: dark; --bg: #0A0E14; --panel: #121923; --line: #223044; --text: #e6edf3; --dim: #8b98a8; --ok: #3fb950; --bad: #f85149; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, sans-serif; }
+header { display: flex; align-items: baseline; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+h1 { margin: 0; font-size: 1.1rem; letter-spacing: .04em; }
+#status { color: var(--dim); font-size: .85rem; }
+main { padding: 20px; }
+#empty { color: var(--dim); text-align: center; margin-top: 20vh; }
+#empty[hidden] { display: none; }
+.cards { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); }
+.cards.single { max-width: min(1000px, 100%); margin: 0 auto; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.card h2 { margin: 0 0 4px; font-size: 1rem; display: flex; gap: 10px; align-items: center; }
+.summary { margin: 0 0 10px; color: var(--dim); min-height: 1.4em; white-space: pre-wrap; }
+.pair { display: flex; gap: 10px; }
+.pane { flex: 1; min-width: 0; position: relative; }
+.pane .label { position: absolute; top: 6px; left: 8px; font-size: .75rem; color: var(--dim); }
+canvas { display: block; width: 100%; aspect-ratio: 1; background: var(--bg); border-radius: 6px; }
+.caption { position: absolute; left: 0; right: 0; bottom: 8%; text-align: center; font-size: 1.4rem; font-weight: 600; text-shadow: 0 0 8px #000, 0 0 2px #000; pointer-events: none; }
+.caption[hidden] { display: none; }
+.badge { font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.badge.pass { color: #04210b; background: var(--ok); border-color: var(--ok); }
+.badge.fail { color: #2d0503; background: var(--bad); border-color: var(--bad); }
+.badge[hidden] { display: none; }
