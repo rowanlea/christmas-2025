@@ -92,12 +92,8 @@ func animateRun(puzzle string, size int, answer, summary, scriptText string, arg
 		ID: puzzle, Title: "Puzzle " + puzzle, Size: size, Answer: answer,
 		Summary: summary, FrameCount: len(plan.Frames), IntervalMs: 100,
 	}
-	sess := openSession("run", []viewer.Card{card}, stderr)
-	if sess != nil {
-		defer sess.Close()
-	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	ctx, sess, done := animationSession("run", []viewer.Card{card}, stderr)
+	defer done()
 	fmt.Fprintf(stdout, "Animating %d frames…\n", len(plan.Frames))
 	gifPath := "hth-run-" + puzzle + ".gif"
 	if _, err := animate.Animate(ctx, argv, plan, size, answer, puzzle, sess, gifPath); err != nil {
@@ -117,4 +113,17 @@ func openSession(kind string, cards []viewer.Card, stderr io.Writer) *viewer.Ses
 		return nil
 	}
 	return sess
+}
+
+// animationSession opens the viewer (nil when unavailable) and returns a
+// context cancelled by Ctrl-C. The returned func releases both.
+func animationSession(kind string, cards []viewer.Card, stderr io.Writer) (context.Context, *viewer.Session, func()) {
+	sess := openSession(kind, cards, stderr)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	return ctx, sess, func() {
+		stop()
+		if sess != nil {
+			sess.Close()
+		}
+	}
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
-	"os/signal"
 	"strings"
 
 	"hth/internal/animate"
@@ -73,12 +71,8 @@ func animateExamples(exs []examples.Example, answers, summaries []string, argv [
 		plans[i] = script.Sample(s, maxFrames)
 		cards[i].FrameCount = len(plans[i].Frames)
 	}
-	sess := openSession("test", cards, stderr)
-	if sess != nil {
-		defer sess.Close()
-	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
+	ctx, sess, done := animationSession("test", cards, stderr)
+	defer done()
 	for i, ex := range exs {
 		if answers[i] == "" {
 			if sess != nil {

@@ -44,7 +44,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "hth %s: separate the program command with --\n%s", args[0], usage)
 			return 2
 		}
-		return notImplemented(stderr, args[0])
+		return showCmd(args[1:], stdout, stderr)
 	case "viewer":
 		if err := viewer.Serve(viewer.Addr()); err != nil {
 			fmt.Fprintf(stderr, "hth viewer: %v\n", err)
@@ -66,11 +66,6 @@ func splitProgram(args []string) (own, program []string, ok bool) {
 		}
 	}
 	return args, nil, false
-}
-
-func notImplemented(stderr io.Writer, name string) int {
-	fmt.Fprintf(stderr, "hth %s: not implemented\n", name)
-	return 1
 }
 
 func login(args []string, stdout, stderr io.Writer) int {
