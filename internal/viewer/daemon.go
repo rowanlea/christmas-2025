@@ -22,34 +22,35 @@ const maxBody = 1 << 20
 
 // Card is one tree, with any expected tree beside it.
 type Card struct {
-	ID         string
-	Title      string
-	Size       int
-	Answer     string
-	Expected   string // test only
-	Summary    string
-	FrameCount int
-	IntervalMs int
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Size       int    `json:"size"`
+	Answer     string `json:"answer"`
+	Expected   string `json:"expected"` // test only
+	Summary    string `json:"summary"`
+	FrameCount int    `json:"frameCount"`
+	IntervalMs int    `json:"intervalMs"`
 }
 
 // Publication is one set of cards shown together.
 type Publication struct {
-	ID    string
-	Kind  string // "run", "test" or "show"
-	Cards []Card
+	ID    string `json:"id"`
+	Kind  string `json:"kind"` // "run", "test" or "show"
+	Cards []Card `json:"cards"`
 }
 
 // FrameEvent is one sampled tree of a card.
 type FrameEvent struct {
-	Publication   string
-	Card          string
-	Index         int
-	Line          string
-	SkippedBefore int64
+	Publication   string `json:"publication"`
+	Card          string `json:"card"`
+	Index         int    `json:"index"`
+	Line          string `json:"line"`
+	SkippedBefore int64  `json:"skippedBefore"`
 }
 
 // DoneEvent marks the end of a card's frames.
 type DoneEvent struct {
+	Publication  string `json:"publication"`
 	Card         string `json:"card"`
 	SkippedAtEnd int64  `json:"skippedAtEnd"`
 }
@@ -111,15 +112,19 @@ func (s *state) latest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := struct {
-		Publication Publication
-		Frames      []FrameEvent
-		Done        []DoneEvent
+		Publication Publication  `json:"publication"`
+		Frames      []FrameEvent `json:"frames"`
+		Done        []DoneEvent  `json:"done"`
 	}{*s.pub, append([]FrameEvent{}, s.frames...), append([]DoneEvent{}, s.done...)}
 	s.mu.Unlock()
+	order := map[string]int{}
+	for i, c := range out.Publication.Cards {
+		order[c.ID] = i
+	}
 	sort.SliceStable(out.Frames, func(i, j int) bool {
 		a, b := out.Frames[i], out.Frames[j]
-		if a.Card != b.Card {
-			return false
+		if order[a.Card] != order[b.Card] {
+			return order[a.Card] < order[b.Card]
 		}
 		return a.Index < b.Index
 	})
@@ -207,8 +212,8 @@ func (s *state) frame(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	if s.pub != nil && s.pub.ID == f.Publication {
 		s.frames = append(s.frames, f)
+		s.broadcast("frame", f)
 	}
-	s.broadcast("frame", f)
 	s.mu.Unlock()
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -219,8 +224,10 @@ func (s *state) doneH(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.mu.Lock()
-	s.done = append(s.done, d)
-	s.broadcast("done", d)
+	if s.pub != nil && s.pub.ID == d.Publication {
+		s.done = append(s.done, d)
+		s.broadcast("done", d)
+	}
 	s.mu.Unlock()
 	w.WriteHeader(http.StatusNoContent)
 }

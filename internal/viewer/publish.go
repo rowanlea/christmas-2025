@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -21,8 +22,9 @@ var (
 // background; after the first failure the rest are dropped.
 type Session struct {
 	base   string
+	pubID  string
 	queue  chan post
-	failed bool
+	failed atomic.Bool
 	wg     sync.WaitGroup
 }
 
@@ -52,7 +54,7 @@ func openAt(addr string, p Publication) (*Session, error) {
 	case unreachable:
 		return nil, errors.New("viewer did not start; run hth viewer in another terminal")
 	case foreign:
-		return nil, fmt.Errorf("port %s is in use; set HTH_VIEWER_PORT", portOf(Addr()))
+		return nil, fmt.Errorf("port %s is in use; set HTH_VIEWER_PORT", portOf(addr))
 	}
 	if err := send(base, "/publish", p); err != nil {
 		return nil, err
@@ -62,7 +64,7 @@ func openAt(addr string, p Publication) (*Session, error) {
 			return nil, fmt.Errorf("open %s in your browser", base)
 		}
 	}
-	s := &Session{base: base, queue: make(chan post, 1024)}
+	s := &Session{base: base, pubID: p.ID, queue: make(chan post, 1024)}
 	go s.run()
 	return s, nil
 }
@@ -112,28 +114,48 @@ func send(base, path string, v any) error {
 
 func (s *Session) run() {
 	for p := range s.queue {
-		if !s.failed && send(s.base, p.path, p.body) != nil {
-			s.failed = true
+		if !s.failed.Load() && send(s.base, p.path, p.body) != nil {
+			s.failed.Store(true)
 		}
 		s.wg.Done()
 	}
 }
 
+// enqueue never blocks: when the queue is full the post is dropped and the
+// session is marked failed.
 func (s *Session) enqueue(path string, v any) {
+	if s.failed.Load() {
+		return
+	}
 	s.wg.Add(1)
-	s.queue <- post{path, v}
+	select {
+	case s.queue <- post{path, v}:
+	default:
+		s.wg.Done()
+		s.failed.Store(true)
+	}
 }
 
-// Frame posts one frame in the background.
-func (s *Session) Frame(f FrameEvent) { s.enqueue("/frame", f) }
+// Frame posts one frame in the background. It must not be called after Close.
+func (s *Session) Frame(f FrameEvent) {
+	f.Publication = s.pubID
+	s.enqueue("/frame", f)
+}
 
-// Done marks a card's frames complete.
+// Done marks a card's frames complete. It must not be called after Close.
 func (s *Session) Done(card string, skippedAtEnd int64) {
-	s.enqueue("/done", DoneEvent{Card: card, SkippedAtEnd: skippedAtEnd})
+	s.enqueue("/done", DoneEvent{Publication: s.pubID, Card: card, SkippedAtEnd: skippedAtEnd})
 }
 
 // Flush waits for queued posts, so a short-lived CLI does not exit before they
-// are sent.
+// are sent. Call it only after all Frame and Done calls have returned.
 func (s *Session) Flush() { s.wg.Wait() }
+
+// Close flushes, then stops the background goroutine. Call it only after all
+// Frame and Done calls have returned, and do not call Frame or Done afterwards.
+func (s *Session) Close() {
+	s.Flush()
+	close(s.queue)
+}
 
 func portOf(addr string) string { return addr[strings.LastIndex(addr, ":")+1:] }
