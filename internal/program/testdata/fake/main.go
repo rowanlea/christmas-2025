@@ -53,6 +53,13 @@ func main() {
 		script := readScript()
 		time.Sleep(time.Duration(n) * time.Millisecond)
 		echoK(script)
+	case "fail-lines":
+		n, _ := strconv.Atoi(arg)
+		script := readScript()
+		if len(strings.Split(strings.TrimRight(script, "\n"), "\n")) == n {
+			os.Exit(1)
+		}
+		count(script)
 	case "log":
 		script := readScript()
 		f, err := os.OpenFile(arg, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)

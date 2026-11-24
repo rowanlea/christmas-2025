@@ -145,3 +145,21 @@ func TestShowFullRunFailureUploadsNothing(t *testing.T) {
 		t.Errorf("uploads %d, stdout %q", len(api.uploads), out)
 	}
 }
+
+func TestShowReportsSkippedSteps(t *testing.T) {
+	api := &showAPI{}
+	api.start(t)
+	file := writeShow(t, "s.txt", "SIZE 16", 12)
+	code, out, errs := runCapture("show", file, "--", programtest.FakePath(t), "fail-lines", "3")
+	if code != 0 {
+		t.Fatalf("code = %d, stderr %q", code, errs)
+	}
+	skipped := strings.Index(out, "1 steps were skipped because the program failed on them")
+	uploaded := strings.Index(out, "Show uploaded: 12 frames")
+	if skipped < 0 || uploaded < 0 || skipped > uploaded {
+		t.Errorf("stdout = %q", out)
+	}
+	if len(api.uploads) != 1 || len(api.uploads[0]) != 12 {
+		t.Errorf("uploads = %v", len(api.uploads))
+	}
+}
