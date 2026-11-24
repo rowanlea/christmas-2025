@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/gif"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"hth/internal/tree"
 )
 
-var sizes = []int{3, 4, 16, 48}
+var sizes = []int{16, 48}
 
 func rgb(c color.Color) color.RGBA {
 	r, g, b, _ := c.RGBA()
@@ -97,7 +98,8 @@ func TestBackgroundColourBudget(t *testing.T) {
 }
 
 func TestFallbackSize(t *testing.T) {
-	bg, bulbs := Load(7)
+	const n = 49
+	bg, bulbs := Load(n)
 	if b := bg.Bounds(); b.Dx() != 1200 || b.Dy() != 1200 {
 		t.Fatalf("background is %v", b)
 	}
@@ -107,14 +109,14 @@ func TestFallbackSize(t *testing.T) {
 			t.Errorf("pixel %v = %v, want %v", pt, got, want)
 		}
 	}
-	if len(bulbs) != 28 {
-		t.Fatalf("%d bulbs, want 28", len(bulbs))
+	if len(bulbs) != tree.BulbCount(n) {
+		t.Fatalf("%d bulbs, want %d", len(bulbs), tree.BulbCount(n))
 	}
 	i := 0
-	for r := 0; r < 7; r++ {
+	for r := 0; r < n; r++ {
 		for p := 0; p <= r; p++ {
-			x, y := tree.Centre(7, r, p)
-			if bulbs[i].X != x || bulbs[i].Y != y || bulbs[i].R != tree.Radius(7) {
+			x, y := tree.Centre(n, r, p)
+			if bulbs[i].X != x || bulbs[i].Y != y || bulbs[i].R != tree.Radius(n) {
 				t.Fatalf("bulb %d = %+v, want centre (%v, %v)", i, bulbs[i], x, y)
 			}
 			i++
@@ -267,5 +269,75 @@ func TestWriteGIFCaptionBar(t *testing.T) {
 	}
 	if centre := (minX + maxX) / 2; centre < 297 || centre > 303 {
 		t.Errorf("caption ink spans x %d..%d, centre %d, want about 300", minX, maxX, centre)
+	}
+}
+
+func TestGridSize(t *testing.T) {
+	for size, want := range map[int]int{1: 16, 3: 16, 4: 16, 16: 16, 17: 48, 30: 48, 48: 48, 0: 0, 49: 49} {
+		if got := Grid(size); got != want {
+			t.Errorf("Grid(%d) = %d, want %d", size, got, want)
+		}
+	}
+}
+
+func TestOnlyGridAssetsRemain(t *testing.T) {
+	entries, err := fs.ReadDir(Assets(), ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	want := ".gitattributes README.md bulbs-16.json bulbs-48.json tree-16.png tree-48.png"
+	if got := strings.Join(names, " "); got != want {
+		t.Errorf("assets = %s, want %s", got, want)
+	}
+}
+
+func TestSmallTreesLoadTheGrid(t *testing.T) {
+	for size, grid := range map[int]int{3: 16, 4: 16, 9: 16, 17: 48, 30: 48} {
+		gbg, gbulbs := Load(grid)
+		bg, bulbs := Load(size)
+		if bg != gbg || len(bulbs) != len(gbulbs) {
+			t.Fatalf("Load(%d): %d bulbs, want the %d grid's %d", size, len(bulbs), grid, len(gbulbs))
+		}
+		for i := range bulbs {
+			if bulbs[i] != gbulbs[i] {
+				t.Fatalf("Load(%d) bulb %d = %+v, want %+v", size, i, bulbs[i], gbulbs[i])
+			}
+		}
+	}
+}
+
+func TestDrawFramePutsASmallAnswerOnTheGrid(t *testing.T) {
+	const n = 4
+	line := "RGBWKRGBWK"
+	dst := image.NewPaletted(image.Rect(0, 0, 600, 600), Palette(n))
+	DrawFrame(dst, n, line, 0.5)
+	_, grid := Load(16)
+	if len(grid) != 136 {
+		t.Fatalf("%d grid bulbs, want 136", len(grid))
+	}
+	for i, b := range grid {
+		got := rgb(dst.At(int(b.X/2), int(b.Y/2)))
+		if i < len(line) {
+			want := tree.Colour(line[i])
+			if got != (color.RGBA{R: want.R, G: want.G, B: want.B, A: 255}) {
+				t.Errorf("grid entry %d: pixel %v, want bulb %c", i, got, line[i])
+			}
+		} else if got != SocketColour {
+			t.Errorf("grid entry %d: pixel %v, want socket %v", i, got, SocketColour)
+		}
+	}
+}
+
+func TestSocketNeverLooksLikeABulbState(t *testing.T) {
+	for _, s := range []byte("RGBWK") {
+		p := tree.Colour(s)
+		dr, dg, db := int(SocketColour.R)-int(p.R), int(SocketColour.G)-int(p.G), int(SocketColour.B)-int(p.B)
+		if d := dr*dr + dg*dg + db*db; d < 3000 {
+			t.Errorf("socket colour %v is within %d of %c", SocketColour, d, s)
+		}
 	}
 }

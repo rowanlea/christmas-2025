@@ -74,3 +74,21 @@ func Diff(expected, actual string, size int) [][2]int {
 	}
 	return out
 }
+
+// Wiring returns the answer-line index of every bulb in wiring order: the
+// wiring snakes down from the star, row 1 left to right, row 2 right to left,
+// alternating from there.
+func Wiring(size int) []int {
+	out := make([]int, 0, BulbCount(size))
+	for r := 0; r < size; r++ {
+		first := BulbCount(r)
+		for p := 0; p <= r; p++ {
+			if r%2 == 0 {
+				out = append(out, first+r-p)
+			} else {
+				out = append(out, first+p)
+			}
+		}
+	}
+	return out
+}

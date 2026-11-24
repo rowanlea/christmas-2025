@@ -65,11 +65,25 @@ func Layout(size int) []Bulb {
 	return bulbs
 }
 
-// Load returns the 1200 x 1200 background and bulb table for size. Sizes
-// without embedded assets get a plain #0A0E14 background and the bulbs of the
-// render layout.
+// Grid returns the size of the bulb grid a tree of size rows is drawn on: 16
+// for 1..16 rows and 48 for 17..48. Bulb i of the answer sits on entry i of
+// the grid's bulb table, since answer order runs row by row from the star.
+// Other sizes have no grid and are drawn on their own render layout.
+func Grid(size int) int {
+	switch {
+	case size >= 1 && size <= 16:
+		return 16
+	case size >= 17 && size <= 48:
+		return 48
+	}
+	return size
+}
+
+// Load returns the 1200 x 1200 background and bulb table of the grid that a
+// tree of size rows is drawn on. Sizes without a grid get a plain #0A0E14
+// background and the bulbs of their own render layout.
 func Load(size int) (bg image.Image, bulbs []Bulb) {
-	e := load(size)
+	e := load(Grid(size))
 	return e.bg, append([]Bulb(nil), e.bulbs...)
 }
 
@@ -153,9 +167,10 @@ func backgroundColours(size int) []color.RGBA {
 	return load(size).colours
 }
 
-// Palette returns the GIF palette for size: the background's own colours,
-// then the five bulb colours (white doubles as caption text colour) and the
-// caption bar colour if the background does not already hold them.
+// Palette returns the GIF palette for a tree of size rows: the grid
+// background's own colours, the caption bar colour, the five bulb colours
+// (white doubles as caption text colour) and the colours DrawFrame adds around
+// bulbs and sockets, each once.
 func Palette(size int) color.Palette {
 	var p color.Palette
 	seen := map[color.RGBA]bool{}
@@ -165,12 +180,15 @@ func Palette(size int) color.Palette {
 			p = append(p, c)
 		}
 	}
-	for _, c := range backgroundColours(size) {
+	for _, c := range backgroundColours(Grid(size)) {
 		add(c)
 	}
 	add(BgColour)
 	for _, s := range []byte("RGBWK") {
 		add(toRGBA(tree.Colour(s)))
+	}
+	for _, c := range drawColours() {
+		add(c)
 	}
 	return p
 }

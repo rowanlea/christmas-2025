@@ -17,7 +17,7 @@ import (
 	"hth/internal/art"
 )
 
-var sizes = []int{3, 4, 16, 48}
+var sizes = []int{16, 48}
 
 // Decoration colours stay at least squared RGB distance 3000 from every bulb
 // colour (the art tests enforce it), so lit bulbs never blend into the tree.

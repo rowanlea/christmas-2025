@@ -48,3 +48,19 @@ func TestDiff(t *testing.T) {
 		t.Errorf("identical Diff = %v", got)
 	}
 }
+
+func TestWiringSnakesFromTheStar(t *testing.T) {
+	want := []int{0, 1, 2, 5, 4, 3, 6, 7, 8, 9}
+	got := Wiring(4)
+	if len(got) != len(want) {
+		t.Fatalf("Wiring(4) = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("Wiring(4) = %v, want %v", got, want)
+		}
+	}
+	if n := len(Wiring(48)); n != BulbCount(48) {
+		t.Errorf("Wiring(48) has %d entries, want %d", n, BulbCount(48))
+	}
+}

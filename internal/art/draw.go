@@ -20,13 +20,31 @@ var (
 	baseCache = map[baseKey]*image.Paletted{}
 )
 
-// DrawFrame draws the tree for size onto dst: the background scaled by scale
-// (nearest-neighbour), then every bulb of line in its state colour. Bulb 0 is a
-// five-point star and the rest are discs. dst must use Palette(size) so the
-// bulb colours are in it; characters outside RGBWK leave their bulb undrawn.
+// SocketColour is the cap of an unlit socket: a grid position that holds no
+// bulb of the answer. It is far from every bulb colour, Off included.
+var SocketColour = color.RGBA{R: 0x6A, G: 0x4A, B: 0x12, A: 0xFF}
+
+// wellColour is the dark hollow around a socket's cap.
+var wellColour = color.RGBA{R: 0x05, G: 0x06, B: 0x07, A: 0xFF}
+
+const (
+	wellScale = 0.8
+	capScale  = 0.38
+)
+
+func drawColours() []color.RGBA {
+	return []color.RGBA{SocketColour, wellColour}
+}
+
+// DrawFrame draws the tree for size onto dst: the grid background scaled by
+// scale (nearest-neighbour), then bulb i of line on entry i of the grid's bulb
+// table in its state colour. Bulb 0 is a five-point star and the rest are
+// discs. Grid entries beyond the line, and characters outside RGBWK, are drawn
+// as unlit sockets. dst must use Palette(size).
 func DrawFrame(dst *image.Paletted, size int, line string, scale float64) {
-	e := load(size)
-	b := base(e, size, dst, scale)
+	grid := Grid(size)
+	e := load(grid)
+	b := base(e, grid, dst, scale)
 	for y := 0; y < b.Rect.Dy(); y++ {
 		copy(dst.Pix[y*dst.Stride:y*dst.Stride+b.Rect.Dx()], b.Pix[y*b.Stride:y*b.Stride+b.Rect.Dx()])
 	}
@@ -36,19 +54,19 @@ func DrawFrame(dst *image.Paletted, size int, line string, scale float64) {
 		index[s] = uint8(dst.Palette.Index(tree.Colour(s)))
 		known[s] = true
 	}
+	socket := uint8(dst.Palette.Index(SocketColour))
+	well := uint8(dst.Palette.Index(wellColour))
 	for i, bulb := range e.bulbs {
-		if i >= len(line) {
-			break
-		}
-		s := line[i]
-		if !known[s] {
+		cx, cy, r := bulb.X*scale, bulb.Y*scale, bulb.R*scale
+		if i >= len(line) || !known[line[i]] {
+			fillDisc(dst, cx, cy, r*wellScale, well)
+			fillDisc(dst, cx, cy, r*capScale, socket)
 			continue
 		}
-		cx, cy, r := bulb.X*scale, bulb.Y*scale, bulb.R*scale
 		if i == 0 {
-			fillStar(dst, cx, cy, r*starScale, index[s])
+			fillStar(dst, cx, cy, r*starScale, index[line[i]])
 		} else {
-			fillDisc(dst, cx, cy, r, index[s])
+			fillDisc(dst, cx, cy, r, index[line[i]])
 		}
 	}
 }

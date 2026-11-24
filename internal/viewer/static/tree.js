@@ -1,7 +1,7 @@
-const ART_SIZES = [3, 4, 16, 48];
 const COLOURS = { R: '#FF0000', G: '#00FF00', B: '#0000FF', W: '#FFFFFF', K: '#303030' };
 const FALLBACK_BACKGROUND = '#0A0E14';
-const SOCKET = '#1a222e';
+const SOCKET = '#6A4A12';
+const WELL = '#050607';
 const CANVAS = 1200;
 
 function layout(size) {
@@ -25,12 +25,21 @@ function loadImage(url) {
   });
 }
 
+// Every tree is drawn on the 16 or 48 bulb grid: bulb i of the answer sits on
+// entry i of the grid's table, and the rest of the grid shows unlit sockets.
+function gridSize(size) {
+  if (size >= 1 && size <= 16) return 16;
+  if (size >= 17 && size <= 48) return 48;
+  return 0;
+}
+
 export async function loadArt(baseUrl, size) {
-  if (ART_SIZES.includes(size)) {
+  const grid = gridSize(size);
+  if (grid) {
     try {
       const [background, res] = await Promise.all([
-        loadImage(`${baseUrl}/art/tree-${size}.png`),
-        fetch(`${baseUrl}/art/bulbs-${size}.json`),
+        loadImage(`${baseUrl}/art/tree-${grid}.png`),
+        fetch(`${baseUrl}/art/bulbs-${grid}.json`),
       ]);
       if (background && res.ok) {
         return { background, bulbs: await res.json() };
@@ -39,7 +48,7 @@ export async function loadArt(baseUrl, size) {
       // fall through to the plain layout
     }
   }
-  return { background: null, bulbs: layout(size) };
+  return { background: null, bulbs: layout(grid || size) };
 }
 
 function bulbPath(ctx, b, i, grow = 1) {
@@ -79,14 +88,20 @@ export function drawTree(ctx, art, { states, time = 0, ringed = [] }) {
       ctx.fillStyle = `rgba(255,255,255,${0.35 * glow})`;
       ctx.fill();
     }
-    bulbPath(ctx, b, i);
-    ctx.fillStyle = colour || SOCKET;
-    ctx.fill();
     if (!colour) {
-      ctx.strokeStyle = '#2c3a4d';
-      ctx.lineWidth = Math.max(1, b.r * 0.1);
-      ctx.stroke();
+      ctx.fillStyle = WELL;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = SOCKET;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * 0.38, 0, Math.PI * 2);
+      ctx.fill();
+      return;
     }
+    bulbPath(ctx, b, i);
+    ctx.fillStyle = colour;
+    ctx.fill();
   });
   ctx.strokeStyle = '#FFD60A';
   for (const i of ringed) {

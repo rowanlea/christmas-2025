@@ -9,8 +9,12 @@ formats exactly as they are.
 | `tree-<n>.png` | 1200 x 1200 background for a tree of `<n>` rows: tree, trunk and stand on `#0A0E14`, no bulbs. |
 | `bulbs-<n>.json` | `[{"x":600,"y":120,"r":21.3}, ...]`: one entry per bulb, in answer order (row by row from the star, left to right). Numbers may have decimals. |
 
-Sizes with assets: 3, 4, 16 and 48. Any other size falls back to a plain
-`#0A0E14` background with bulbs from the render layout.
+Only two grids have assets: 16 and 48. Every tree is drawn on one of them:
+a script of 1 to 16 rows on the 16 grid, and 17 to 48 rows on the 48 grid.
+Bulb `i` of the answer sits on entry `i` of the grid's table, so a 4-row tree
+lights the top four rows of the 16 grid. Grid positions with no bulb of the
+answer are drawn as unlit sockets. Any other size falls back to a plain
+`#0A0E14` background with bulbs from its own render layout.
 
 ## Editing rules
 
@@ -27,6 +31,6 @@ Sizes with assets: 3, 4, 16 and 48. Any other size falls back to a plain
 
 ## Regenerating
 
-`go run ./cmd/genart` writes a first draft of all eight files. It refuses to
+`go run ./cmd/genart` writes all four files. It refuses to
 overwrite existing assets, to protect hand-finished art; pass `-force` to
 replace them.

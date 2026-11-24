@@ -12,7 +12,10 @@ func TestRunWritesAllAssets(t *testing.T) {
 	if err := run(dir, false); err != nil {
 		t.Fatal(err)
 	}
-	for _, n := range []string{"3", "4", "16", "48"} {
+	if entries, _ := os.ReadDir(dir); len(entries) != 4 {
+		t.Errorf("wrote %d files, want 4 (sizes 16 and 48 only)", len(entries))
+	}
+	for _, n := range []string{"16", "48"} {
 		for _, f := range []string{"tree-" + n + ".png", "bulbs-" + n + ".json"} {
 			if st, err := os.Stat(filepath.Join(dir, f)); err != nil || st.Size() == 0 {
 				t.Errorf("%s missing or empty: %v", f, err)
@@ -34,7 +37,7 @@ func TestRunRefusesToOverwriteWithoutForce(t *testing.T) {
 	if b, _ := os.ReadFile(hand); string(b) != "hand edited" {
 		t.Fatalf("existing asset was modified")
 	}
-	if _, err := os.Stat(filepath.Join(dir, "tree-3.png")); err == nil {
+	if _, err := os.Stat(filepath.Join(dir, "tree-48.png")); err == nil {
 		t.Fatalf("refusal must not write any asset")
 	}
 	if err := run(dir, true); err != nil {
