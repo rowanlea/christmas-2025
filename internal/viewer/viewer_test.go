@@ -375,3 +375,48 @@ func TestEmbeddedAssets(t *testing.T) {
 		t.Errorf("/: %d, missing viewer.js module script", code)
 	}
 }
+
+func TestForeignHostRejected(t *testing.T) {
+	srv := httptest.NewServer(Handler())
+	defer srv.Close()
+	for _, path := range []string{"/", "/latest", "/events", "/health"} {
+		req, _ := http.NewRequest("GET", srv.URL+path, nil)
+		req.Host = "attacker.example:47474"
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusForbidden {
+			t.Errorf("GET %s with foreign Host: status %d, want 403", path, resp.StatusCode)
+		}
+	}
+	req, _ := http.NewRequest("POST", srv.URL+"/publish", strings.NewReader(`{"id":"p","kind":"run","cards":[]}`))
+	req.Host = "attacker.example"
+	req.Header.Set("X-HTH", "1")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("POST /publish with foreign Host: status %d, want 403", resp.StatusCode)
+	}
+}
+
+func TestLocalHostsAccepted(t *testing.T) {
+	srv := httptest.NewServer(Handler())
+	defer srv.Close()
+	for _, host := range []string{"127.0.0.1:47474", "localhost:47474", "localhost", "[::1]:47474"} {
+		req, _ := http.NewRequest("GET", srv.URL+"/health", nil)
+		req.Host = host
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("Host %s: status %d, want 200", host, resp.StatusCode)
+		}
+	}
+}

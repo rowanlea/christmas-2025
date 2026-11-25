@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net"
 	"net/http"
 	"os"
 	"sort"
@@ -93,7 +94,24 @@ func Handler() http.Handler {
 	mux.HandleFunc("POST /publish", s.publish)
 	mux.HandleFunc("POST /frame", s.frame)
 	mux.HandleFunc("POST /done", s.doneH)
-	return mux
+	return localOnly(mux)
+}
+
+// localOnly rejects requests addressed to any host name but a loopback one. The daemon
+// listens on 127.0.0.1 only, but a web page can rebind its own domain to 127.0.0.1 and
+// then talk to the daemon as same-origin; such requests still carry that domain as Host.
+func localOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		host := r.Host
+		if h, _, err := net.SplitHostPort(host); err == nil {
+			host = h
+		}
+		if host != "127.0.0.1" && host != "localhost" && host != "::1" && host != "[::1]" {
+			http.Error(w, "forbidden host", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *state) health(w http.ResponseWriter, r *http.Request) {
