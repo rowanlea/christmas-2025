@@ -56,6 +56,8 @@ The repo also ships the worked examples and starter stubs.
 
 ### API contract (identical in server plan)
 
+`ChristmasKataServer/docs/api.md` is the live contract. This table matches it. Rate limits (per team, fixed 5-minute window, `429` when exceeded): challenges 30, submissions 30, shows 10.
+
 Auth headers `X-Team-Name` and `X-Unique-Key` are required on every route except those marked *public*. Errors return `{"error": "<message>"}`.
 
 | Route | Request | Success | Failures |
@@ -64,13 +66,15 @@ Auth headers `X-Team-Name` and `X-Unique-Key` are required on every route except
 | `POST /puzzles/{puzzle}/challenges` | — | `201` `{"challengeId":"<guid>","puzzle":"3.2","size":16,"script":"SIZE 16\n…","expiresAt":"<ISO-8601>"}` | `404` unknown puzzle, `403` locked |
 | `POST /challenges/{challengeId}/submission` | body `image/png`, ≤ 1 MiB | `200` `{"puzzle":"3.2","correct":131,"bulbCount":136,"points":72,"bestPoints":72,"unlocked":"3.3"}`. `unlocked` is the puzzle this submission opened, else `null` | `404` unknown or another team's, `409` already submitted, `410` expired, `400` not a 1200 × 1200 PNG, `413` too large |
 | `GET /shows/permission` | — | `204` | `403` `Santa comes first: get full marks on 7.1 to unlock light shows` |
-| `POST /shows` | body `{"frames":["<136 chars>",…]}`, ≤ 256 KiB | `201` `{"frames":412}` | `403` as above, `400` no frames, over 500 frames, or a frame not 136 `RGBWK` chars, `413` too large |
+| `POST /shows` | body `{"frames":["<1176 chars>",…]}`, ≤ 1 MiB | `201` `{"frames":412}` | `403` as above, `400` no frames, over 500 frames, or a frame not 1176 `RGBWK` chars, `413` too large |
 | `GET /shows` *public* | — | `200` `[{"teamName","frames":[…],"submittedAt"}]`, the latest show per team, oldest submission first | — |
-| `GET /leaderboard` *public* | — | `200` `[{"teamName":"team-07","total":1234,"puzzles":{"1.1":100}}]` (points), total descending. | — |
+| `GET /progress` | — | `200` `{"teamName","next","showsUnlocked","puzzles":[{"id","status","percent"}]}`, the calling team's progress | — |
+| `GET /team` *public* | — | `200` HTML page: a team signs in with its name and key (kept in the browser), then sees its progress from `GET /progress`, live | — |
+| `GET /leaderboard` *public* | optional `If-None-Match` | `200` `{"teams":[{"rank":1,"teamName":"team-07","total":1234}],"ladder":[…rungs]}` with an `ETag` header, teams by total descending then name; `304` when `If-None-Match` matches | — |
 | `GET /feed` *public* | — | `200` `{"tiles":[Tile…]}`, newest first, max 8 | — |
-| `GET /feed/events` *public* | — | `text/event-stream`: event `tile` (data Tile), event `leaderboard` (data leaderboard), and event `show` (data `{"teamName","first":bool}`; the page then reloads `/shows`) | — |
+| `GET /feed/events` *public* | — | `text/event-stream`: event `tile` (data Tile), event `leaderboard` (data the same body as `GET /leaderboard`, sent after each submission), and event `show` (data `{"teamName","first":bool}`; the page then reloads `/shows`) | — |
 
-`hth` uses only the first six routes. The leaderboard and feed routes serve the scoreboard.
+`hth` uses only the first six routes. `/progress` and `/team` serve the team page, and the leaderboard and feed routes serve the big-screen scoreboard. There is no freeze and no admin key: the host hides the standings with the scoreboard's "Hide leaderboard" button.
 
 ## Review Focus
 
@@ -474,7 +478,7 @@ Page behaviour (spec "Viewer" table):
 **Interfaces:**
 - Consumes: `api.Client.ShowPermission`/`UploadShow`, `script.Parse`/`Every`, `animate.Animate`.
 - Steps for `hth show <file> -- <command…>`:
-  1. Parse the file. `SIZE` must be 16, else `light shows use SIZE 16`. `Steps()` must be ≤ 500, else `show runs N steps; the limit is 500`.
+  1. Parse the file. `SIZE` must be 48 (the same grid as 7.1), else `light shows use SIZE 48`. `Steps()` must be ≤ 500, else `show runs N steps; the limit is 500`.
   2. Call `ShowPermission`. A `403` prints the server's Santa message and exits 1. Nothing runs before this check passes.
   3. Run the full script through `program.Run` and validate the answer.
   4. Animate with `script.Every`, writing `hth-show-<base>.gif`.
@@ -487,7 +491,7 @@ Page behaviour (spec "Viewer" table):
   - `TestShowRefusedBeforeSanta`: the permission check gets `403`. Exit 1, the message has `Santa comes first`, and the program never ran (the fake `log` file stays empty).
   - `TestShowTooLong`: a 501-step script is refused before any network call.
   - `TestShowWrongSize`: `SIZE 4` is refused.
-  - `TestShowUploadsEveryStep`: a 12-step script gives an upload of 13 frames (12 steps plus the final tree), all 136 chars, and the GIF is written.
+  - `TestShowUploadsEveryStep`: a 12-step script gives an upload of 13 frames (12 steps plus the final tree), all 1176 chars, and the GIF is written.
 - [ ] **Step 2:** Run the tests. Expected: FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** Run the tests. Expected: PASS.
@@ -525,7 +529,7 @@ Each stub reads all of stdin, takes `n` from the first non-blank line that is no
   - Scoring and unlocks in one paragraph: 80 % unlocks the next puzzle, and the points rule (100 for perfect, `40 + 2 × (pct − 80)` from 80 % to 99 %, 0 below).
   - The program contract, from Global Constraints.
   - How animations work: up to 120 extra runs on cut-down scripts after submission, so a slow emulator animates slowly but never affects the score. The GIF names.
-  - Light shows: unlocked by a perfect Secret Santa (7.1), 500-step limit, `SIZE 16`, latest show per team kept, not scored.
+  - Light shows: unlocked by a perfect Secret Santa (7.1), 500-step limit, `SIZE 48`, latest show per team kept, not scored.
   - Troubleshooting: the port variable, the Windows wrapper note from Task 3, and what `403` and `410` mean.
   - A link to `docs/spec.md`.
 - [ ] **Step 2:** Push a test tag to a fork, or run the release job with `workflow_dispatch`. Expected: five zips. On each OS available, unzip and run `hth --version` and `hth test examples -- python3 stubs/python/emulator.py`. Expected: the version prints and `0/8 passed` (the stub prints all `K`).
